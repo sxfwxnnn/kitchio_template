@@ -25,6 +25,18 @@ export default function RootLayout({
   return (
     <html lang="en" className={plusJakarta.variable} suppressHydrationWarning>
       <head>
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+              :root {
+                --brand-primary: ${tenantConfig.primaryColor};
+              }
+              .dark {
+                --brand-primary: ${tenantConfig.primaryColor};
+              }
+            `,
+          }}
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `

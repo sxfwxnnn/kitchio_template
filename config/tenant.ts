@@ -17,15 +17,15 @@ export interface TenantConfig {
 }
 
 export const tenantConfig: TenantConfig = {
-  restaurantName: "Mario's Pizza",
-  cuisine: "Artisan Pizza & Gourmet Sides",
-  primaryColor: "#0C2C5C", // Default Spice Hut Blue
-  bgColor: "#FFFFFF",      // Default Light Background
-  logoUrl: "/pizza_logo_1779415768933.png", // absolute public paths
-  coverImage: "/pizza_cover_1779415748291.png",
+  restaurantName: "Kitchio",
+  cuisine: "Modern Tech Kitchen & Gourmet Delivery",
+  primaryColor: "#FF5C1A", // Kitchio Premium Coral Orange
+  bgColor: "#FFFFFF",      // Default Light Background (supports dark mode toggle)
+  logoUrl: "/img/logo.png", // Premium fallback brand assets
+  coverImage: "/img/cover.jpg",
   address: "123 Brick Lane, London E1 6QL",
   postcode: "E1 6QL",
-  hours: "17:00 - 22:00",
+  hours: "11:00 - 23:00",
   rating: 4.9,
   deliveryTime: "20-35",
   minimumOrder: 15.0,

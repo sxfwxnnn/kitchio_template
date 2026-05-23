@@ -70,7 +70,7 @@ export default function AdminSettingsPage() {
       const active = stored ? JSON.parse(stored) : demoRestaurant;
 
       setRestaurantName(active.name || "Kitchio");
-      setCuisine(active.cuisine || "Artisan Pizza & Gourmet Sides");
+      setCuisine(active.cuisine || "Modern Tech Kitchen & Gourmet Delivery");
       setMinimumOrder(String(active.minimumOrder || 15.0));
       setDeliveryFee(String(active.deliveryFee || 3.0));
       setFreeDeliveryOver(String(active.freeDeliveryOver || 30.0));

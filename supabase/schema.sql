@@ -322,8 +322,8 @@ insert into public.restaurants (
   'Kitchio',
   '/img/logo.png',
   '/img/cover.jpg',
-  '#09090b',
-  'Artisan Pizza & Gourmet Sides',
+  '#FF5C1A',
+  'Modern Tech Kitchen & Gourmet Delivery',
   4.8,
   25,
   40,
@@ -333,7 +333,7 @@ insert into public.restaurants (
   '123 Brick Lane, London E1 6QL',
   'E1 6QL',
   true,
-  '22:00',
+  '23:00',
   null
 ) on conflict (id) do nothing;
 
