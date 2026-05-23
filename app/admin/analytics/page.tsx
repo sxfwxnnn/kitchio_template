@@ -219,7 +219,7 @@ export default function AdminAnalyticsPage() {
                     <span>+12.4% vs last week</span>
                   </span>
                 </div>
-                <div className="p-3 bg-zinc-950 border border-zinc-800/60 rounded-xl text-[#0F8A5F]">
+                <div className="p-3 bg-zinc-950 border border-zinc-800/60 rounded-xl text-brand-primary">
                   <Coins className="h-5 w-5" />
                 </div>
               </div>
@@ -291,7 +291,7 @@ export default function AdminAnalyticsPage() {
                         <div className="w-full bg-zinc-900 border border-zinc-800 rounded-lg relative overflow-hidden h-40 flex items-end">
                           <div
                             style={{ height: `${heightPercent}%` }}
-                            className="w-full bg-[#0F8A5F] group-hover:bg-[#0D7A54] rounded-md transition-all duration-500 shadow-md"
+                            className="w-full bg-brand-primary group-hover:opacity-90 rounded-md transition-all duration-500 shadow-md"
                           />
                         </div>
                         <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">{d.day}</span>

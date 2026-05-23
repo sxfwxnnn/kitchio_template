@@ -515,7 +515,7 @@ export default function AccountSettingsPage() {
                         handleAddAddress(label, defaultAddress);
                       }
                     }}
-                    className="text-[10px] font-bold text-[#0F8A5F] hover:underline"
+                    className="text-[10px] font-bold text-brand-primary hover:underline"
                   >
                     + Save Current Address
                   </button>
@@ -538,7 +538,7 @@ export default function AccountSettingsPage() {
                       }}
                       className={`group relative flex flex-col justify-between rounded-xl border p-3 cursor-pointer transition-all duration-150 ${
                         defaultAddress === addr.address
-                          ? "border-[#0F8A5F] bg-[#0F8A5F]/5 ring-1 ring-[#0F8A5F]"
+                          ? "border-brand-primary bg-brand-primary/5 ring-1 ring-brand-primary"
                           : "border-zinc-200 bg-white hover:border-zinc-300"
                       }`}
                     >

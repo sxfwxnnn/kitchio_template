@@ -672,7 +672,7 @@ function CheckoutForm() {
                   {!isLoggedIn && (
                     <Link
                       href="/login"
-                      className="text-xs font-bold text-[#0F8A5F] hover:underline"
+                      className="text-xs font-bold text-brand-primary hover:underline"
                     >
                       Already have an account? Sign in
                     </Link>
@@ -694,7 +694,7 @@ function CheckoutForm() {
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                       placeholder="Safwan Salehin"
-                      className="w-full rounded-xl border border-brand-border bg-brand-bg py-2.5 pl-9 pr-4 text-sm text-brand-text focus:border-[#0F8A5F] focus:ring-1 focus:ring-[#0F8A5F] focus:outline-none transition-colors"
+                      className="w-full rounded-xl border border-brand-border bg-brand-bg py-2.5 pl-9 pr-4 text-sm text-brand-text focus:border-brand-primary focus:ring-1 focus:ring-brand-primary focus:outline-none transition-colors"
                     />
                   </div>
                 </div>
@@ -717,7 +717,7 @@ function CheckoutForm() {
                         className={`w-full rounded-xl border py-2.5 pl-9 pr-4 text-sm focus:outline-none transition-colors ${
                           isLoggedIn
                             ? "border-brand-border bg-brand-bg/50 text-brand-text-muted cursor-not-allowed"
-                            : "border-brand-border bg-brand-bg text-brand-text focus:border-[#0F8A5F] focus:ring-1 focus:ring-[#0F8A5F]"
+                            : "border-brand-border bg-brand-bg text-brand-text focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
                         }`}
                       />
                     </div>
@@ -732,7 +732,7 @@ function CheckoutForm() {
                         value={customerPhone}
                         onChange={(e) => setCustomerPhone(e.target.value)}
                         placeholder="07123 456789"
-                        className="w-full rounded-xl border border-brand-border bg-brand-bg py-2.5 pl-9 pr-4 text-sm text-brand-text focus:border-[#0F8A5F] focus:ring-1 focus:ring-[#0F8A5F] focus:outline-none transition-colors"
+                        className="w-full rounded-xl border border-brand-border bg-brand-bg py-2.5 pl-9 pr-4 text-sm text-brand-text focus:border-brand-primary focus:ring-1 focus:ring-brand-primary focus:outline-none transition-colors"
                       />
                     </div>
                   </div>
@@ -753,7 +753,7 @@ function CheckoutForm() {
                       value={deliveryAddress}
                       onChange={(e) => setDeliveryAddress(e.target.value)}
                       placeholder="Type your address or postcode to autocomplete..."
-                      className="w-full rounded-xl border border-gray-200 py-3 pl-9 pr-4 text-sm text-gray-900 focus:border-[#0F8A5F] focus:ring-1 focus:ring-[#0F8A5F] focus:outline-none transition-colors"
+                      className="w-full rounded-xl border border-gray-200 py-3 pl-9 pr-4 text-sm text-gray-900 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary focus:outline-none transition-colors"
                       autoComplete="one-time-code"
                     />
                   </div>
@@ -777,7 +777,7 @@ function CheckoutForm() {
                               }}
                               className={`py-1.5 px-3 text-xs font-semibold rounded-lg border text-center transition-all duration-100 cursor-pointer ${
                                 active
-                                  ? "bg-[#0F8A5F] border-[#0F8A5F] text-white font-bold"
+                                  ? "bg-brand-primary border-brand-primary text-white font-bold"
                                   : "bg-[#FAFAFA] border-gray-250 text-gray-700 hover:border-gray-350"
                               }`}
                             >
@@ -818,7 +818,7 @@ function CheckoutForm() {
                     onClick={() => setDeliveryTimeMode("asap")}
                     className={`flex items-center justify-center gap-2.5 rounded-xl border py-3 px-4 transition-all duration-150 ${
                       deliveryTimeMode === "asap"
-                        ? "border-[#0F8A5F] bg-[#0F8A5F]/5 ring-1 ring-[#0F8A5F] font-bold"
+                        ? "border-brand-primary bg-brand-primary/5 ring-1 ring-brand-primary font-bold"
                         : "border-gray-200 hover:border-gray-300 font-medium bg-white"
                     }`}
                   >
@@ -832,11 +832,11 @@ function CheckoutForm() {
                     onClick={() => setDeliveryTimeMode("schedule")}
                     className={`flex items-center justify-center gap-2.5 rounded-xl border py-3 px-4 transition-all duration-150 ${
                       deliveryTimeMode === "schedule"
-                        ? "border-[#0F8A5F] bg-[#0F8A5F]/5 ring-1 ring-[#0F8A5F] font-bold"
+                        ? "border-brand-primary bg-brand-primary/5 ring-1 ring-brand-primary font-bold"
                         : "border-gray-200 hover:border-gray-300 font-medium bg-white"
                     }`}
                   >
-                    <Clock className={`h-4.5 w-4.5 ${deliveryTimeMode === "schedule" ? "text-[#0F8A5F]" : "text-gray-400"}`} />
+                    <Clock className={`h-4.5 w-4.5 ${deliveryTimeMode === "schedule" ? "text-brand-primary" : "text-gray-400"}`} />
                     <span className="text-xs text-gray-950">Schedule Time</span>
                   </button>
                 </div>
@@ -855,7 +855,7 @@ function CheckoutForm() {
                           onClick={() => setSelectedTimeSlot(slot)}
                           className={`py-2 px-3 text-xs font-semibold rounded-lg border text-center transition-all duration-100 ${
                             selectedTimeSlot === slot
-                              ? "bg-[#0F8A5F] border-[#0F8A5F] text-white font-bold"
+                              ? "bg-brand-primary border-brand-primary text-white font-bold"
                               : "bg-white border-gray-200 text-gray-700 hover:border-gray-350"
                           }`}
                         >
@@ -893,7 +893,7 @@ function CheckoutForm() {
                         }}
                         className={`flex flex-col items-center justify-center rounded-xl border py-2.5 transition-all duration-150 ${
                           active
-                            ? "border-[#0F8A5F] bg-[#0F8A5F]/5 ring-1 ring-[#0F8A5F] font-bold"
+                            ? "border-brand-primary bg-brand-primary/5 ring-1 ring-brand-primary font-bold"
                             : "border-gray-200 hover:border-gray-300 bg-white"
                         }`}
                       >
@@ -914,7 +914,7 @@ function CheckoutForm() {
                     }}
                     className={`flex flex-col items-center justify-center rounded-xl border py-2.5 transition-all duration-150 ${
                       tipPercentage === null && customTip
-                        ? "border-[#0F8A5F] bg-[#0F8A5F]/5 ring-1 ring-[#0F8A5F] font-bold"
+                        ? "border-brand-primary bg-brand-primary/5 ring-1 ring-brand-primary font-bold"
                         : "border-gray-200 hover:border-gray-300 bg-white"
                     }`}
                   >
@@ -937,7 +937,7 @@ function CheckoutForm() {
                         value={customTip}
                         onChange={(e) => setCustomTip(e.target.value)}
                         placeholder="0.00"
-                        className="w-full rounded-xl border border-gray-200 py-2 pl-7 pr-4 text-xs text-gray-955 focus:border-[#0F8A5F] focus:ring-1 focus:ring-[#0F8A5F] focus:outline-none"
+                        className="w-full rounded-xl border border-gray-200 py-2 pl-7 pr-4 text-xs text-gray-955 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary focus:outline-none"
                       />
                     </div>
                   </div>
@@ -1066,7 +1066,7 @@ function CheckoutForm() {
                 </div>
                 
                 {/* Embedded stripe elements container */}
-                <div className="rounded-lg border border-gray-200 bg-white p-4 focus-within:border-[#0F8A5F] focus-within:ring-1 focus-within:ring-[#0F8A5F] transition-all duration-150">
+                <div className="rounded-lg border border-gray-200 bg-white p-4 focus-within:border-brand-primary focus-within:ring-1 focus-within:ring-brand-primary transition-all duration-150">
                   <CardElement options={CARD_ELEMENT_OPTIONS} />
                 </div>
                 
@@ -1093,7 +1093,7 @@ function CheckoutForm() {
                 <button
                   onClick={() => handleCheckout(false)}
                   disabled={loading || !minimumMet || !stripe || !elements || (orderMode === "delivery" && !deliveryAddress)}
-                  className="flex w-full items-center justify-between rounded-xl bg-[#0F8A5F] px-6 py-3.5 text-sm font-bold text-white transition-all hover:bg-[#0D7A54] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
+                  className="flex w-full items-center justify-between rounded-xl bg-brand-primary px-6 py-3.5 text-sm font-bold text-white transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
                 >
                   <CreditCard className="h-5 w-5" />
                   {loading ? (
@@ -1179,7 +1179,7 @@ function CheckoutForm() {
                     <span>Delivery</span>
                     <span className="font-semibold font-serif">
                       {deliveryFee === 0 ? (
-                        <span className="text-[#0F8A5F] font-bold uppercase tracking-wider text-[10px]">Free</span>
+                        <span className="text-brand-primary font-bold uppercase tracking-wider text-[10px]">Free</span>
                       ) : (
                         `£${deliveryFee.toFixed(2)}`
                       )}
@@ -1205,7 +1205,7 @@ function CheckoutForm() {
                 
                 <div className="flex justify-between border-t border-dashed border-gray-200 pt-3 text-base font-bold text-gray-900">
                   <span>Total</span>
-                  <span className="text-[#0F8A5F] font-serif">£{total.toFixed(2)}</span>
+                  <span className="text-brand-primary font-serif">£{total.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -1220,7 +1220,7 @@ function CheckoutForm() {
                     value={promoInput}
                     onChange={(e) => setPromoInput(e.target.value)}
                     placeholder="E.g. 20SPECIAL"
-                    className="flex-1 rounded-lg border border-gray-200 py-1.5 px-3 text-xs focus:border-[#0F8A5F] focus:ring-1 focus:ring-[#0F8A5F] focus:outline-none"
+                    className="flex-1 rounded-lg border border-gray-200 py-1.5 px-3 text-xs focus:border-brand-primary focus:ring-1 focus:ring-brand-primary focus:outline-none"
                   />
                   <button
                     type="button"

@@ -152,15 +152,15 @@ export default function PromoInput({ subtotal, onDiscountChange }: PromoInputPro
   };
 
   return (
-    <div className="border-t border-white/10 py-3.5 mt-2">
+    <div className="border-t border-brand-border py-3.5 mt-2">
       {!appliedPromo ? (
         <>
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="flex w-full items-center justify-between py-1 text-[9px] font-bold text-zinc-550 hover:text-zinc-300 transition-colors uppercase tracking-wider cursor-pointer"
+            className="flex w-full items-center justify-between py-1 text-[9px] font-bold text-brand-text-muted hover:text-brand-primary transition-colors uppercase tracking-wider cursor-pointer"
           >
             <span className="flex items-center gap-1.5">
-              <Tag className="h-3.5 w-3.5 text-zinc-400" />
+              <Tag className="h-3.5 w-3.5 text-brand-text-muted" />
               Do you have a promo code?
             </span>
             {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
@@ -173,19 +173,19 @@ export default function PromoInput({ subtotal, onDiscountChange }: PromoInputPro
                 value={promoInput}
                 onChange={(e) => setPromoInput(e.target.value)}
                 placeholder="E.g. 20SPECIAL"
-                className="flex-1 rounded-xl border border-white/10 bg-zinc-900/30 py-2 px-3 text-xs text-white font-medium placeholder:text-zinc-650 focus:border-brand-primary focus:bg-zinc-900/50 focus:outline-none transition-all duration-150"
+                className="flex-1 rounded-xl border border-brand-border bg-brand-card py-2 px-3 text-xs text-brand-text font-medium placeholder:text-brand-text-muted focus:border-brand-primary focus:outline-none transition-all duration-150"
               />
               <button
                 onClick={handleApplyClick}
                 disabled={loading || !promoInput.trim()}
-                className="rounded-full bg-brand-primary px-4 py-2 text-xs font-bold text-white hover:bg-brand-primary/95 disabled:opacity-40 hover:shadow-[0_0_12px_rgba(240,90,61,0.25)] transition-all cursor-pointer"
+                className="rounded-full bg-brand-primary px-4 py-2 text-xs font-bold text-white hover:bg-brand-primary/95 disabled:opacity-40 hover:shadow-[0_0_12px_rgba(255,92,26,0.25)] transition-all cursor-pointer"
               >
                 {loading ? "Checking..." : "Apply"}
               </button>
             </div>
           )}
           {promoError && (
-            <p className="mt-1.5 text-[9px] font-bold uppercase tracking-wide text-red-400 bg-red-950/20 py-1.5 px-3 rounded border border-red-900/30">
+            <p className="mt-1.5 text-[9px] font-bold uppercase tracking-wide text-red-500 bg-red-500/10 py-1.5 px-3 rounded border border-red-500/20">
               {promoError}
             </p>
           )}
@@ -195,7 +195,7 @@ export default function PromoInput({ subtotal, onDiscountChange }: PromoInputPro
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-brand-primary fill-brand-primary/10" />
             <div>
-              <p className="text-[10px] font-bold text-white uppercase tracking-wider">
+              <p className="text-[10px] font-bold text-brand-text uppercase tracking-wider">
                 Promo Applied: {appliedPromo}
               </p>
               <p className="text-[10px] font-bold text-brand-primary mt-0.5 font-serif">
@@ -205,7 +205,7 @@ export default function PromoInput({ subtotal, onDiscountChange }: PromoInputPro
           </div>
           <button
             onClick={removePromo}
-            className="rounded-full p-1.5 text-zinc-400 hover:text-red-400 hover:bg-red-950/30 transition-all cursor-pointer"
+            className="rounded-full p-1.5 text-brand-text-muted hover:text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
             title="Remove Promo"
           >
             <Trash2 className="h-3.5 w-3.5" />

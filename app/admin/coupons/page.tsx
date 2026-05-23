@@ -186,7 +186,7 @@ export default function AdminCouponsPage() {
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
                   placeholder="E.g. SUMMER25"
-                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium placeholder:text-zinc-650 focus:border-[#0F8A5F] focus:outline-none transition-all"
+                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium placeholder:text-zinc-650 focus:border-brand-primary focus:outline-none transition-all"
                 />
               </div>
 
@@ -199,7 +199,7 @@ export default function AdminCouponsPage() {
                     onClick={() => setDiscountType("percentage")}
                     className={`py-2 px-3 text-xs font-semibold rounded-xl border text-center transition-all ${
                       discountType === "percentage"
-                        ? "bg-[#0F8A5F]/10 border-[#0F8A5F] text-[#0F8A5F]"
+                        ? "bg-brand-primary/10 border-brand-primary text-brand-primary"
                         : "bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:border-zinc-700"
                     }`}
                   >
@@ -210,7 +210,7 @@ export default function AdminCouponsPage() {
                     onClick={() => setDiscountType("fixed")}
                     className={`py-2 px-3 text-xs font-semibold rounded-xl border text-center transition-all ${
                       discountType === "fixed"
-                        ? "bg-[#0F8A5F]/10 border-[#0F8A5F] text-[#0F8A5F]"
+                        ? "bg-brand-primary/10 border-brand-primary text-brand-primary"
                         : "bg-zinc-950/60 border-zinc-800 text-zinc-400 hover:border-zinc-700"
                     }`}
                   >
@@ -233,7 +233,7 @@ export default function AdminCouponsPage() {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder={discountType === "percentage" ? "20" : "5.00"}
-                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium placeholder:text-zinc-650 focus:border-[#0F8A5F] focus:outline-none transition-all"
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium placeholder:text-zinc-650 focus:border-brand-primary focus:outline-none transition-all"
                   />
                 </div>
 
@@ -246,7 +246,7 @@ export default function AdminCouponsPage() {
                     value={minOrder}
                     onChange={(e) => setMinOrder(e.target.value)}
                     placeholder="15.00"
-                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium placeholder:text-zinc-650 focus:border-[#0F8A5F] focus:outline-none transition-all"
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium placeholder:text-zinc-650 focus:border-brand-primary focus:outline-none transition-all"
                   />
                 </div>
               </div>
@@ -258,14 +258,14 @@ export default function AdminCouponsPage() {
                   type="date"
                   value={expiry}
                   onChange={(e) => setExpiry(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium focus:border-[#0F8A5F] focus:outline-none transition-all"
+                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium focus:border-brand-primary focus:outline-none transition-all"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full mt-2.5 flex items-center justify-center gap-2 rounded-xl bg-[#0F8A5F] hover:bg-[#0D7A54] py-3 text-xs font-bold uppercase tracking-wider text-white transition-all disabled:opacity-50 cursor-pointer shadow-sm"
+                className="w-full mt-2.5 flex items-center justify-center gap-2 rounded-xl bg-brand-primary hover:opacity-90 py-3 text-xs font-bold uppercase tracking-wider text-white transition-all disabled:opacity-50 cursor-pointer shadow-sm"
               >
                 {submitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -324,7 +324,7 @@ export default function AdminCouponsPage() {
                             </span>
                           </div>
                           
-                          <div className="flex items-center gap-1 mt-3.5 text-xs font-serif font-bold text-[#0F8A5F]">
+                          <div className="flex items-center gap-1 mt-3.5 text-xs font-serif font-bold text-brand-primary">
                             <Coins className="h-4 w-4" />
                             <span>
                               {coupon.discount_type === "percentage"
@@ -342,7 +342,7 @@ export default function AdminCouponsPage() {
                             className="p-1 rounded bg-zinc-800/60 border border-zinc-700/20 text-zinc-400 hover:text-zinc-100 transition-colors cursor-pointer"
                             title={coupon.active ? "Pause Coupon" : "Activate Coupon"}
                           >
-                            {coupon.active ? <ToggleRight className="h-4 w-4 text-[#0F8A5F]" /> : <ToggleLeft className="h-4 w-4 text-zinc-550" />}
+                            {coupon.active ? <ToggleRight className="h-4 w-4 text-brand-primary" /> : <ToggleLeft className="h-4 w-4 text-zinc-550" />}
                           </button>
                           <button
                             type="button"

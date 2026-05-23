@@ -159,7 +159,7 @@ export default function AdminSettingsPage() {
             {/* 1. General Profile Bento Module */}
             <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-6 space-y-4 backdrop-blur-md">
               <div className="flex items-center gap-2 text-zinc-350">
-                <Store className="h-4.5 w-4.5 text-[#0F8A5F]" />
+                <Store className="h-4.5 w-4.5 text-brand-primary" />
                 <h2 className="text-xs font-bold uppercase tracking-wider">Restaurant Profile</h2>
               </div>
               
@@ -171,7 +171,7 @@ export default function AdminSettingsPage() {
                     required
                     value={restaurantName}
                     onChange={(e) => setRestaurantName(e.target.value)}
-                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium focus:border-[#0F8A5F] focus:outline-none transition-all"
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium focus:border-brand-primary focus:outline-none transition-all"
                   />
                 </div>
 
@@ -182,7 +182,7 @@ export default function AdminSettingsPage() {
                     required
                     value={cuisine}
                     onChange={(e) => setCuisine(e.target.value)}
-                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium focus:border-[#0F8A5F] focus:outline-none transition-all"
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium focus:border-brand-primary focus:outline-none transition-all"
                   />
                 </div>
 
@@ -194,7 +194,7 @@ export default function AdminSettingsPage() {
                       required
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
-                      className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium focus:border-[#0F8A5F] focus:outline-none transition-all"
+                      className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium focus:border-brand-primary focus:outline-none transition-all"
                     />
                   </div>
 
@@ -205,7 +205,7 @@ export default function AdminSettingsPage() {
                       required
                       value={postcode}
                       onChange={(e) => setPostcode(e.target.value)}
-                      className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium focus:border-[#0F8A5F] focus:outline-none transition-all"
+                      className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium focus:border-brand-primary focus:outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -215,7 +215,7 @@ export default function AdminSettingsPage() {
             {/* 2. Operations & Hours Bento Module */}
             <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-6 space-y-4 backdrop-blur-md">
               <div className="flex items-center gap-2 text-zinc-350">
-                <Clock className="h-4.5 w-4.5 text-[#0F8A5F]" />
+                <Clock className="h-4.5 w-4.5 text-brand-primary" />
                 <h2 className="text-xs font-bold uppercase tracking-wider">Hours & Status</h2>
               </div>
               
@@ -227,7 +227,7 @@ export default function AdminSettingsPage() {
                     required
                     value={closesAt}
                     onChange={(e) => setClosesAt(e.target.value)}
-                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium focus:border-[#0F8A5F] focus:outline-none transition-all"
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium focus:border-brand-primary focus:outline-none transition-all"
                   />
                 </div>
 
@@ -264,7 +264,7 @@ export default function AdminSettingsPage() {
             {/* 3. Delivery Pricing & Thresholds Bento Module */}
             <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-6 space-y-4 backdrop-blur-md md:col-span-2">
               <div className="flex items-center gap-2 text-zinc-350">
-                <Truck className="h-4.5 w-4.5 text-[#0F8A5F]" />
+                <Truck className="h-4.5 w-4.5 text-brand-primary" />
                 <h2 className="text-xs font-bold uppercase tracking-wider">Pricing, Delivery & Basket limits</h2>
               </div>
               
@@ -278,7 +278,7 @@ export default function AdminSettingsPage() {
                     required
                     value={minimumOrder}
                     onChange={(e) => setMinimumOrder(e.target.value)}
-                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium focus:border-[#0F8A5F] focus:outline-none transition-all"
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium focus:border-brand-primary focus:outline-none transition-all"
                   />
                 </div>
 
@@ -291,7 +291,7 @@ export default function AdminSettingsPage() {
                     required
                     value={deliveryFee}
                     onChange={(e) => setDeliveryFee(e.target.value)}
-                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium focus:border-[#0F8A5F] focus:outline-none transition-all"
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium focus:border-brand-primary focus:outline-none transition-all"
                   />
                 </div>
 
@@ -304,7 +304,7 @@ export default function AdminSettingsPage() {
                     required
                     value={freeDeliveryOver}
                     onChange={(e) => setFreeDeliveryOver(e.target.value)}
-                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium focus:border-[#0F8A5F] focus:outline-none transition-all"
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950/80 py-2.5 px-3.5 text-xs text-zinc-50 font-medium focus:border-brand-primary focus:outline-none transition-all"
                   />
                 </div>
               </div>
@@ -315,7 +315,7 @@ export default function AdminSettingsPage() {
           <button
             type="submit"
             disabled={saving}
-            className="flex max-w-xs items-center justify-center gap-2 rounded-xl bg-[#0F8A5F] hover:bg-[#0D7A54] py-3.5 px-6 text-xs font-bold uppercase tracking-wider text-white transition-all disabled:opacity-50 cursor-pointer shadow-md"
+            className="flex max-w-xs items-center justify-center gap-2 rounded-xl bg-brand-primary hover:opacity-90 py-3.5 px-6 text-xs font-bold uppercase tracking-wider text-white transition-all disabled:opacity-50 cursor-pointer shadow-md"
           >
             {saving ? (
               <Loader2 className="h-4 w-4 animate-spin" />

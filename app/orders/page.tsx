@@ -245,7 +245,7 @@ export default function OrdersListPage() {
                         <button
                           type="button"
                           onClick={() => handleOrderAgain(order.order_items || [])}
-                          className="inline-flex items-center gap-1.5 rounded-full bg-[#0F8A5F]/10 border border-[#0F8A5F]/20 text-[#0F8A5F] px-3.5 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#0F8A5F]/20 transition-all cursor-pointer"
+                          className="inline-flex items-center gap-1.5 rounded-full bg-brand-primary/10 border border-brand-primary/20 text-brand-primary px-3.5 py-2 text-xs font-bold uppercase tracking-wider hover:bg-brand-primary/20 transition-all cursor-pointer"
                         >
                           <ShoppingBag className="h-3.5 w-3.5" />
                           <span>Order Again</span>

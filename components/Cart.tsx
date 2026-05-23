@@ -67,14 +67,14 @@ export default function Cart({ restaurant }: CartProps) {
     <>
       {/* Backdrop overlay */}
       <div
-        className={`fixed inset-0 z-[900] bg-black/40 backdrop-blur-[2px] transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        className={`fixed inset-0 z-[900] bg-black/40 transition-opacity duration-200 ease-out ${
           isCartOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setIsCartOpen(false)}
       />
 
       <div
-        className={`fixed z-[950] bg-brand-card transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] transform-gpu flex flex-col
+        className={`fixed z-[950] bg-brand-card transition-transform duration-200 ease-out transform-gpu flex flex-col
           inset-x-0 bottom-0 max-h-[85vh] rounded-t-2xl shadow-2xl border-t border-brand-border
           lg:inset-y-0 lg:left-auto lg:right-0 lg:w-[380px] lg:max-h-full lg:rounded-none lg:border-t-0 lg:border-l lg:border-brand-border lg:shadow-[-8px_0_30px_rgba(0,0,0,0.06)]
           ${

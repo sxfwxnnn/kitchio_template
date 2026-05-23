@@ -39,7 +39,7 @@ export default function CategoryTabs({
   }, [activeCategory]);
 
   return (
-    <div className="lg:hidden sticky top-[57px] z-30 border-b border-white/10 bg-[#0A0A0A]/80 backdrop-blur-xl">
+    <div className="lg:hidden sticky top-[57px] z-30 border-b border-brand-border bg-brand-card/80 backdrop-blur-xl">
       <div
         ref={scrollRef}
         className="scrollbar-hide flex gap-2 overflow-x-auto px-4 py-2.5"
@@ -53,8 +53,8 @@ export default function CategoryTabs({
               onClick={() => onCategoryClick(cat.id)}
               className={`shrink-0 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all duration-150 active:scale-95 cursor-pointer ${
                 isActive
-                  ? "border-brand-primary bg-brand-primary text-white shadow-[0_0_12px_rgba(240,90,61,0.25)]"
-                  : "border-white/10 bg-zinc-900/60 text-zinc-400 hover:border-white/20 hover:text-zinc-250"
+                  ? "border-brand-primary bg-brand-primary text-brand-bg shadow-sm"
+                  : "border-brand-border bg-brand-card text-brand-text-muted hover:border-brand-text-muted/30 hover:text-brand-text"
               }`}
             >
               {cat.name}
