@@ -123,3 +123,54 @@ body {
 .font-serif {
   font-family: var(--font-plus-jakarta), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
+
+/* Premium S-Tier styling for Google Places Autocomplete dropdown (.pac-container) */
+.pac-container {
+  background-color: var(--brand-card) !important;
+  border: 1px solid var(--brand-border) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+  font-family: var(--font-plus-jakarta), -apple-system, sans-serif !important;
+  margin-top: 6px !important;
+  padding: 6px !important;
+  z-index: 99999 !important; /* Ensure it is visible above modal overlays */
+}
+
+.pac-item {
+  border-top: 1px solid var(--brand-border) !important;
+  padding: 10px 12px !important;
+  font-size: 13px !important;
+  color: var(--brand-text-muted) !important;
+  cursor: pointer !important;
+  transition: all 150ms ease-in-out !important;
+  border-radius: 8px !important;
+}
+
+.pac-item:first-of-type {
+  border-top: none !important;
+}
+
+.pac-item:hover {
+  background-color: var(--brand-bg) !important;
+  color: var(--brand-text) !important;
+}
+
+.pac-item-query {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: var(--brand-text) !important;
+}
+
+.pac-matched {
+  color: var(--brand-accent) !important; /* Champagne gold matching highlight! */
+}
+
+.pac-icon {
+  display: none !important; /* Remove basic google maps icons for ultra-clean minimalism */
+}
+
+/* Make Google attribution branding extremely subtle and elegant */
+.pac-logo::after {
+  filter: opacity(0.35) grayscale(1) !important;
+  margin: 6px 12px !important;
+}

@@ -25,6 +25,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={plusJakarta.variable} suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://xukvcpmmlfltwwnnqifj.supabase.co" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://xukvcpmmlfltwwnnqifj.supabase.co" />
+        <link rel="preconnect" href="https://maps.googleapis.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://maps.googleapis.com" />
+        <link rel="preconnect" href="https://api.stripe.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://api.stripe.com" />
         <style
           dangerouslySetInnerHTML={{
             __html: `
