@@ -16,6 +16,7 @@ import { useCart } from "@/context/CartContext";
 import { createClient } from "@/lib/supabase/client";
 import { Search, X } from "lucide-react";
 import AddressModal from "@/components/AddressModal";
+import DemoSelector from "@/components/DemoSelector";
 
 // Transform raw Supabase menu_items rows into our typed MenuCategory[] structure
 function buildMenuCategories(
@@ -135,12 +136,29 @@ export default function MenuPage() {
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [verifiedAddress, setVerifiedAddress] = useState<string | null>(null);
 
+  // Demo selector states
+  const [isDemoSelectorOpen, setIsDemoSelectorOpen] = useState(false);
+
   // ── Live data fetch from Supabase ────────────────────────────────────────
   useEffect(() => {
     const supabase = createClient();
     const RESTAURANT_ID = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
 
     async function fetchMenu() {
+      // 1. Check if we have a client-side demo preset selected that overrides the menu
+      const activeDemo = localStorage.getItem("kitchio-demo-selected") || "1";
+      if (activeDemo !== "1") {
+        const { demoPresets } = require("@/config/demoPresets");
+        const preset = demoPresets[activeDemo];
+        if (preset && preset.menu.length > 0) {
+          setMenuCategories(preset.menu);
+          setActiveCategory(preset.menu[0]?.id || "");
+          setMenuLoaded(true);
+          return;
+        }
+      }
+
+      // Default load from Supabase for option 1 (Pizza)
       try {
         const [
           { data: cats },
@@ -325,6 +343,27 @@ export default function MenuPage() {
     setShowAddressModal(false);
   }, [setOrderMode]);
 
+  // Check if we need to open the demo selection on first visit
+  useEffect(() => {
+    const selected = localStorage.getItem("kitchio-demo-selected");
+    if (!selected) {
+      setIsDemoSelectorOpen(true);
+    }
+  }, []);
+
+  const handleDemoSelect = useCallback((presetId: string) => {
+    // Save selection
+    localStorage.setItem("kitchio-demo-selected", presetId);
+    const { demoPresets } = require("@/config/demoPresets");
+    const preset = demoPresets[presetId];
+    if (preset) {
+      setRestaurant(preset.restaurant);
+      localStorage.setItem("kitchio-override-restaurant", JSON.stringify(preset.restaurant));
+      // Force page reload to clear old menu categories, primary colors and active states cleanly!
+      window.location.reload();
+    }
+  }, []);
+
   const deliveryFee =
     orderMode === "delivery"
       ? subtotal >= restaurant.freeDeliveryOver
@@ -335,7 +374,7 @@ export default function MenuPage() {
 
   return (
     <div className="min-h-screen bg-brand-bg text-brand-text pb-20 lg:pb-0 relative">
-      <Nav restaurant={restaurant} menuCategories={menuCategories} />
+      <Nav restaurant={restaurant} menuCategories={menuCategories} onDemoClick={() => setIsDemoSelectorOpen(true)} />
 
       {!restaurant.isOpen && <ClosedBanner />}
 
@@ -572,6 +611,13 @@ export default function MenuPage() {
       {showAddressModal && (
         <AddressModal onValid={handleAddressValid} />
       )}
+
+      {/* Demo Selector Hub Overlay */}
+      <DemoSelector
+        isOpen={isDemoSelectorOpen}
+        onClose={() => setIsDemoSelectorOpen(false)}
+        onSelect={handleDemoSelect}
+      />
     </div>
   );
 }

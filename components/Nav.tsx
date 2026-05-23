@@ -3,16 +3,17 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Restaurant, MenuCategory, MenuItem } from "@/types";
 import { useCart } from "@/context/CartContext";
-import { Search, X, ShoppingBag } from "lucide-react";
+import { Search, X, ShoppingBag, Sparkles } from "lucide-react";
 import AuthButton from "@/components/AuthButton";
 import { tenantConfig } from "@/config/tenant";
 
 interface NavProps {
   restaurant: Restaurant;
   menuCategories: MenuCategory[];
+  onDemoClick?: () => void;
 }
 
-export default function Nav({ restaurant, menuCategories }: NavProps) {
+export default function Nav({ restaurant, menuCategories, onDemoClick }: NavProps) {
   const { totalItems, isCartOpen, setIsCartOpen } = useCart();
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -202,6 +203,16 @@ export default function Nav({ restaurant, menuCategories }: NavProps) {
 
         {/* Right: Auth + Cart */}
         <div className="flex items-center gap-2">
+          {onDemoClick && (
+            <button
+              onClick={onDemoClick}
+              className="flex items-center gap-1.5 rounded-full border border-brand-accent/35 bg-zinc-950 px-3.5 py-1.5 text-xs font-bold text-brand-accent hover:bg-zinc-900 active:scale-95 transition-all shadow-[0_0_15px_rgba(197,168,128,0.06)] cursor-pointer"
+            >
+              <Sparkles className="h-3.5 w-3.5 animate-pulse text-brand-accent" />
+              <span>Demo Hub</span>
+            </button>
+          )}
+
           <AuthButton />
 
           <button
