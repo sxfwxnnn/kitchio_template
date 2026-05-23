@@ -39,10 +39,10 @@ export default function CategoryTabs({
   }, [activeCategory]);
 
   return (
-    <div className="lg:hidden sticky top-16 z-40 border-b border-[#E8E8E8] bg-white">
+    <div className="lg:hidden sticky top-[57px] z-30 border-b border-white/10 bg-[#0A0A0A]/80 backdrop-blur-xl">
       <div
         ref={scrollRef}
-        className="scrollbar-hide flex gap-2 overflow-x-auto px-4 py-2"
+        className="scrollbar-hide flex gap-2 overflow-x-auto px-4 py-2.5"
       >
         {categories.map((cat) => {
           const isActive = activeCategory === cat.id;
@@ -51,10 +51,10 @@ export default function CategoryTabs({
               key={cat.id}
               ref={isActive ? activeTabRef : null}
               onClick={() => onCategoryClick(cat.id)}
-              className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-all duration-150 ${
+              className={`shrink-0 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all duration-150 active:scale-95 cursor-pointer ${
                 isActive
-                  ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
-                  : "border-[#E8E8E8] bg-white text-[#6B6B6B] hover:border-[#1A1A1A] hover:text-[#1A1A1A]"
+                  ? "border-brand-primary bg-brand-primary text-white shadow-[0_0_12px_rgba(240,90,61,0.25)]"
+                  : "border-white/10 bg-zinc-900/60 text-zinc-400 hover:border-white/20 hover:text-zinc-250"
               }`}
             >
               {cat.name}

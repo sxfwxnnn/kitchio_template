@@ -20,15 +20,15 @@ const CartItem = memo(function CartItem({ item }: CartItemProps) {
     .join(", ");
 
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-gray-50 py-3 last:border-b-0">
+    <div className="flex items-start justify-between gap-3 border-b border-brand-border py-4 last:border-b-0">
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <h4 className="text-sm font-semibold text-gray-900 leading-tight">
+          <h4 className="text-xs font-bold text-brand-text leading-tight uppercase tracking-wide">
             {item.name}
           </h4>
           <button
             onClick={() => removeItem(item.cartLineId)}
-            className="shrink-0 text-gray-300 hover:text-red-500 transition-colors mt-0.5"
+            className="shrink-0 text-brand-text-muted hover:text-red-500 transition-colors mt-0.5 cursor-pointer"
             aria-label={`Remove ${item.name}`}
           >
             <X className="h-3.5 w-3.5" />
@@ -36,36 +36,43 @@ const CartItem = memo(function CartItem({ item }: CartItemProps) {
         </div>
 
         {optionsText && (
-          <p className="mt-0.5 text-xs text-gray-500">{optionsText}</p>
+          <p className="mt-1 text-[10px] font-semibold text-brand-text-muted">{optionsText}</p>
         )}
         {extrasText && (
-          <p className="mt-0.5 text-xs text-gray-500">{extrasText}</p>
+          <p className="mt-0.5 text-[10px] font-semibold text-brand-accent">{extrasText}</p>
+        )}
+        
+        {item.note && (
+          <div className="mt-1.5 flex items-start gap-1 rounded-lg bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 text-[10px] text-amber-600 dark:text-amber-400 font-semibold leading-relaxed">
+            <span className="shrink-0 mt-0.5">💬</span>
+            <p className="italic">"{item.note}"</p>
+          </div>
         )}
 
-        <div className="mt-2 flex items-center justify-between">
-          <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+        <div className="mt-3 flex items-center justify-between">
+          <div className="flex items-center border border-brand-border rounded-xl overflow-hidden bg-brand-bg/50">
             <button
               onClick={() =>
                 updateQuantity(item.cartLineId, item.quantity - 1)
               }
-              className="flex h-6 w-6 items-center justify-center text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex h-7 w-7 items-center justify-center text-brand-text-muted hover:text-brand-text hover:bg-brand-text/5 transition-all cursor-pointer"
             >
               <Minus className="h-3 w-3" />
             </button>
-            <span className="flex h-6 w-6 items-center justify-center border-x border-gray-200 bg-gray-50 text-xs font-bold text-gray-900">
+            <span className="flex h-7 w-7 items-center justify-center border-x border-brand-border bg-brand-card text-xs font-bold text-brand-text">
               {item.quantity}
             </span>
             <button
               onClick={() =>
                 updateQuantity(item.cartLineId, item.quantity + 1)
               }
-              className="flex h-6 w-6 items-center justify-center text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex h-7 w-7 items-center justify-center text-brand-text-muted hover:text-brand-text hover:bg-brand-text/5 transition-all cursor-pointer"
             >
               <Plus className="h-3 w-3" />
             </button>
           </div>
 
-          <span className="text-sm font-semibold text-gray-900">
+          <span className="text-xs font-extrabold text-brand-text font-serif">
             £{item.totalPrice.toFixed(2)}
           </span>
         </div>

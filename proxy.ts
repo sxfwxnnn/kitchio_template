@@ -34,11 +34,14 @@ export async function proxy(request: NextRequest) {
   });
 
   // Protect the admin route exclusively
-  if (request.nextUrl.pathname.startsWith("/admin")) {
+  const pathname = request.nextUrl.pathname;
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.redirect(new URL("/login?next=/admin", request.url));
+      return NextResponse.redirect(
+        new URL(`/login?next=${encodeURIComponent(pathname)}`, request.url)
+      );
     }
 
     // Double check record validation against the admin_users table

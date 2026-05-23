@@ -129,6 +129,14 @@ export async function POST(request: NextRequest) {
           .update({ status: "accepted" })
           .eq("id", orderId);
 
+        // Send order notification to Discord webhook
+        try {
+          const { sendOrderDiscordWebhook } = await import("@/lib/discord");
+          await sendOrderDiscordWebhook(orderId);
+        } catch (discordErr) {
+          console.error("Failed to trigger Discord webhook:", discordErr);
+        }
+
         // TODO PROMPT 4: Trigger Uber Direct delivery creation when Stripe payment succeeds
       }
     }

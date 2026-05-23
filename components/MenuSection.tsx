@@ -17,13 +17,13 @@ export default function MenuSection({
   return (
     <section id={`category-${category.id}`} className="scroll-mt-28">
       {/* Category Header */}
-      <div className="mb-4 border-b border-[#E8E8E8] pb-3 flex items-center gap-2">
-        <h2 className="text-xl font-bold text-[#1A1A1A] md:text-2xl">
+      <div className="mb-5 flex items-center gap-2">
+        <h2 className="text-xl font-extrabold tracking-tight text-brand-text md:text-2xl flex items-center gap-2">
           {category.name}
         </h2>
         {isActive && (
           <span
-            className="inline-block w-2.5 h-2.5 rounded-full bg-zinc-950 animate-flash-dot shadow-[0_0_8px_rgba(0,0,0,0.15)] shrink-0"
+            className="inline-block w-2.5 h-2.5 rounded-full bg-brand-primary animate-flash-dot shadow-[0_0_8px_rgba(0,0,0,0.15)] shrink-0"
             title="Active Category"
           />
         )}

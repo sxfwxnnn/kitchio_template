@@ -143,70 +143,69 @@ export default function PromoInput({ subtotal, onDiscountChange }: PromoInputPro
     if (!code) return;
     validateAndApplyPromo(code, true);
   };
-
   const removePromo = () => {
     setAppliedPromo(null);
-    setPromoDiscount(0);
     localStorage.removeItem("kitchio-applied-promo");
-    if (onDiscountChange) onDiscountChange(0, null);
+    setPromoDiscount(0);
     setPromoError("");
+    if (onDiscountChange) onDiscountChange(0, null);
   };
 
   return (
-    <div className="border-t border-zinc-100 py-3 mt-2">
+    <div className="border-t border-white/10 py-3.5 mt-2">
       {!appliedPromo ? (
         <>
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="flex w-full items-center justify-between py-1 text-xs font-bold text-zinc-500 hover:text-zinc-950 transition-colors uppercase tracking-wider"
+            className="flex w-full items-center justify-between py-1 text-[9px] font-bold text-zinc-550 hover:text-zinc-300 transition-colors uppercase tracking-wider cursor-pointer"
           >
             <span className="flex items-center gap-1.5">
-              <Tag className="h-3.5 w-3.5" />
+              <Tag className="h-3.5 w-3.5 text-zinc-400" />
               Do you have a promo code?
             </span>
             {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           </button>
 
           {isOpen && (
-            <div className="mt-2.5 flex gap-2 animate-in slide-in-from-top-1 duration-150">
+            <div className="mt-2.5 flex gap-2 animate-fade-in">
               <input
                 type="text"
                 value={promoInput}
                 onChange={(e) => setPromoInput(e.target.value)}
                 placeholder="E.g. 20SPECIAL"
-                className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50/50 py-2 px-3 text-xs font-medium placeholder:text-zinc-400 focus:border-zinc-950 focus:bg-white focus:outline-none transition-all duration-150"
+                className="flex-1 rounded-xl border border-white/10 bg-zinc-900/30 py-2 px-3 text-xs text-white font-medium placeholder:text-zinc-650 focus:border-brand-primary focus:bg-zinc-900/50 focus:outline-none transition-all duration-150"
               />
               <button
                 onClick={handleApplyClick}
                 disabled={loading || !promoInput.trim()}
-                className="rounded-full bg-zinc-950 px-4 py-2 text-xs font-bold text-white hover:bg-zinc-800 disabled:opacity-40 transition-colors cursor-pointer"
+                className="rounded-full bg-brand-primary px-4 py-2 text-xs font-bold text-white hover:bg-brand-primary/95 disabled:opacity-40 hover:shadow-[0_0_12px_rgba(240,90,61,0.25)] transition-all cursor-pointer"
               >
                 {loading ? "Checking..." : "Apply"}
               </button>
             </div>
           )}
           {promoError && (
-            <p className="mt-1.5 text-[10px] font-semibold text-red-500 bg-red-50/50 py-1 px-2.5 rounded border border-red-100">
+            <p className="mt-1.5 text-[9px] font-bold uppercase tracking-wide text-red-400 bg-red-950/20 py-1.5 px-3 rounded border border-red-900/30">
               {promoError}
             </p>
           )}
         </>
       ) : (
-        <div className="flex items-center justify-between rounded-xl bg-zinc-50 border border-zinc-150 p-3 animate-in zoom-in-98 duration-200">
+        <div className="flex items-center justify-between rounded-xl bg-brand-primary/5 border border-brand-primary/20 p-3 animate-fade-in">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-zinc-900 fill-zinc-100" />
+            <CheckCircle2 className="h-4 w-4 text-brand-primary fill-brand-primary/10" />
             <div>
-              <p className="text-[11px] font-bold text-zinc-900">
+              <p className="text-[10px] font-bold text-white uppercase tracking-wider">
                 Promo Applied: {appliedPromo}
               </p>
-              <p className="text-[10px] font-bold text-zinc-500 mt-0.5">
+              <p className="text-[10px] font-bold text-brand-primary mt-0.5 font-serif">
                 Saved £{promoDiscount.toFixed(2)}
               </p>
             </div>
           </div>
           <button
             onClick={removePromo}
-            className="rounded-full p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-all cursor-pointer"
+            className="rounded-full p-1.5 text-zinc-400 hover:text-red-400 hover:bg-red-950/30 transition-all cursor-pointer"
             title="Remove Promo"
           >
             <Trash2 className="h-3.5 w-3.5" />

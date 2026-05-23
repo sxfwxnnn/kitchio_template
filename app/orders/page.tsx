@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Order, OrderItem } from "@/types";
 import Link from "next/link";
 import { ArrowLeft, Package, Clock, ChevronRight, Calendar, ShoppingBag, Loader2 } from "lucide-react";
+import { useCart } from "@/context/CartContext";
+import { toast } from "sonner";
 
 interface OrderWithItems extends Order {
   order_items?: OrderItem[];
@@ -13,9 +15,32 @@ interface OrderWithItems extends Order {
 
 export default function OrdersListPage() {
   const router = useRouter();
+  const { addItem, setIsCartOpen } = useCart();
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any | null>(null);
+
+  const handleOrderAgain = (orderItems: OrderItem[]) => {
+    try {
+      orderItems.forEach((item) => {
+        addItem(
+          item.menu_item_id || `item-legacy-${Date.now()}`,
+          item.item_name,
+          item.unit_price,
+          item.quantity,
+          item.selected_options || [],
+          item.selected_extras || [],
+          item.note || undefined
+        );
+      });
+      toast.success("Order items added to cart!", {
+        description: "Your past gourmet selection is ready to order again.",
+      });
+      setIsCartOpen(true);
+    } catch (err) {
+      toast.error("Failed to reorder items. Please try again.");
+    }
+  };
 
   useEffect(() => {
     const supabase = createClient();
@@ -215,17 +240,29 @@ export default function OrdersListPage() {
                       <p className="text-sm font-bold text-zinc-950 font-serif mt-0.5">£{order.total.toFixed(2)}</p>
                     </div>
 
-                    <Link
-                      href={`/orders/${order.id}`}
-                      className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                        active
-                          ? "bg-zinc-950 text-white hover:bg-zinc-800 shadow"
-                          : "bg-zinc-50 border border-zinc-200 text-zinc-600 hover:border-zinc-950 hover:text-zinc-950"
-                      }`}
-                    >
-                      <span>{active ? "Track Live" : "View Receipt"}</span>
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      {!active && order.order_items && (
+                        <button
+                          type="button"
+                          onClick={() => handleOrderAgain(order.order_items || [])}
+                          className="inline-flex items-center gap-1.5 rounded-full bg-[#0F8A5F]/10 border border-[#0F8A5F]/20 text-[#0F8A5F] px-3.5 py-2 text-xs font-bold uppercase tracking-wider hover:bg-[#0F8A5F]/20 transition-all cursor-pointer"
+                        >
+                          <ShoppingBag className="h-3.5 w-3.5" />
+                          <span>Order Again</span>
+                        </button>
+                      )}
+                      <Link
+                        href={`/orders/${order.id}`}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                          active
+                            ? "bg-zinc-950 text-white hover:bg-zinc-800 shadow"
+                            : "bg-zinc-50 border border-zinc-200 text-zinc-600 hover:border-zinc-950 hover:text-zinc-950"
+                        }`}
+                      >
+                        <span>{active ? "Track Live" : "View Receipt"}</span>
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </div>
                   </div>
                 </div>
               );

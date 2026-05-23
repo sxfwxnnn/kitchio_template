@@ -75,7 +75,9 @@ export default function LoginPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInAnonymously({
+    
+    // First attempt: Standard Supabase Anonymous Sign-In
+    const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously({
       options: {
         data: {
           full_name: "Guest Customer",
@@ -83,8 +85,47 @@ export default function LoginPage() {
       },
     });
 
-    if (error) {
-      setError(error.message);
+    if (!anonError) {
+      const nextTarget = getRedirectTarget();
+      router.push(nextTarget);
+      router.refresh();
+      return;
+    }
+
+    console.warn("[GuestLogin] Supabase anonymous sign-in disabled, attempting generic guest account fallback...");
+
+    // Second attempt: Try logging in with a pre-configured guest account
+    const guestEmail = "guest-customer@kitch.io";
+    const guestPassword = "KitchioGuestSecurePassword2026!";
+
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: guestEmail,
+      password: guestPassword,
+    });
+
+    if (!signInError) {
+      const nextTarget = getRedirectTarget();
+      router.push(nextTarget);
+      router.refresh();
+      return;
+    }
+
+    console.log("[GuestLogin] Fallback guest account not found, creating one dynamically...");
+
+    // Third attempt: If the generic guest account doesn't exist yet, sign it up automatically!
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email: guestEmail,
+      password: guestPassword,
+      options: {
+        data: {
+          full_name: "Guest Customer",
+        },
+      },
+    });
+
+    if (signUpError) {
+      console.error("[GuestLogin] Guest fallback sequence completely failed:", signUpError);
+      setError("Guest checkout is temporarily unavailable. Please sign up with your own email instead!");
       setLoading(false);
     } else {
       const nextTarget = getRedirectTarget();

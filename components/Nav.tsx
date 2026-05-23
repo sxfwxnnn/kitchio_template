@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Restaurant, MenuCategory, MenuItem } from "@/types";
 import { useCart } from "@/context/CartContext";
-import { Search, X, ShoppingBag } from "lucide-react";
+import { Search, X, ShoppingBag, Sun, Moon } from "lucide-react";
 import AuthButton from "@/components/AuthButton";
+import { tenantConfig } from "@/config/tenant";
 
 interface NavProps {
   restaurant: Restaurant;
@@ -18,6 +19,7 @@ export default function Nav({ restaurant, menuCategories }: NavProps) {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState(-1);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -26,6 +28,24 @@ export default function Nav({ restaurant, menuCategories }: NavProps) {
     window.addEventListener("scroll", handler, { passive: true });
     return () => window.removeEventListener("scroll", handler);
   }, []);
+
+  // Initialize theme state on mount
+  useEffect(() => {
+    const isDark = document.documentElement.classList.contains("dark");
+    setTheme(isDark ? "dark" : "light");
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "light" ? "dark" : "light";
+    setTheme(nextTheme);
+    if (nextTheme === "dark") {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("kitchio-theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("kitchio-theme", "light");
+    }
+  };
 
   // Close search dropdown on outside click
   useEffect(() => {
@@ -112,26 +132,28 @@ export default function Nav({ restaurant, menuCategories }: NavProps) {
 
   return (
     <nav
-      className={`sticky top-0 z-50 bg-white transition-shadow duration-150 ${
-        scrolled ? "shadow-sm" : "border-b border-gray-100"
+      className={`sticky top-0 z-50 transition-all duration-150 border-b border-brand-border ${
+        scrolled
+          ? "bg-brand-card/90 backdrop-blur-md shadow-sm"
+          : "bg-brand-card"
       }`}
     >
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 lg:px-6">
         {/* Left: Logo + Name */}
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs font-medium text-gray-400 tracking-wide">
+          <span className="text-xs font-bold text-brand-text-muted tracking-widest uppercase">
             kitchio
           </span>
-          <span className="text-gray-200">|</span>
-          <span className="text-sm font-bold text-gray-900">
-            {restaurant.name}
+          <span className="text-brand-border">|</span>
+          <span className="text-sm font-extrabold text-brand-text tracking-tight uppercase">
+            {tenantConfig.restaurantName}
           </span>
         </div>
 
         {/* Centre: Search */}
-        <div ref={searchRef} className="relative hidden sm:block flex-1 max-w-md">
-          <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3.5 py-2 transition-colors focus-within:border-gray-400 focus-within:bg-white">
-            <Search className="h-4 w-4 text-gray-400 shrink-0" />
+        <div ref={searchRef} className="relative hidden sm:block flex-1 max-w-sm">
+          <div className="flex items-center gap-2 rounded-full border border-brand-border bg-brand-bg px-3.5 py-1.5 transition-all focus-within:border-brand-primary">
+            <Search className="h-4 w-4 text-brand-text-muted shrink-0" />
             <input
               ref={inputRef}
               type="text"
@@ -142,7 +164,7 @@ export default function Nav({ restaurant, menuCategories }: NavProps) {
               onFocus={() => {
                 if (debouncedQuery.trim()) setShowResults(true);
               }}
-              className="w-full bg-transparent text-sm font-medium text-gray-900 placeholder:text-gray-400 outline-none"
+              className="w-full bg-transparent text-xs font-semibold text-brand-text placeholder:text-brand-text-muted outline-none"
             />
             {searchQuery && (
               <button
@@ -150,7 +172,7 @@ export default function Nav({ restaurant, menuCategories }: NavProps) {
                   setSearchQuery("");
                   setShowResults(false);
                 }}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-brand-text-muted hover:text-brand-text transition-colors"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -159,9 +181,9 @@ export default function Nav({ restaurant, menuCategories }: NavProps) {
 
           {/* Search Results Dropdown */}
           {showResults && (
-            <div className="animate-fade-in absolute top-full left-0 right-0 mt-2 rounded-xl border border-gray-100 bg-white/95 backdrop-blur-md shadow-lg overflow-hidden z-50">
+            <div className="animate-fade-in absolute top-full left-0 right-0 mt-2 rounded-xl border border-brand-border bg-brand-card shadow-lg overflow-hidden z-50">
               {searchResults.length === 0 ? (
-                <div className="px-4 py-6 text-center text-sm text-gray-500">
+                <div className="px-4 py-6 text-center text-xs text-brand-text-muted font-medium">
                   No items found for &quot;{debouncedQuery}&quot;
                 </div>
               ) : (
@@ -170,21 +192,21 @@ export default function Nav({ restaurant, menuCategories }: NavProps) {
                     <button
                       key={item.id}
                       onClick={() => handleResultClick(item)}
-                      className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors border-b border-gray-50 last:border-b-0 ${
+                      className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors border-b border-brand-border last:border-b-0 ${
                         idx === selectedIdx
-                          ? "bg-gray-50"
-                          : "hover:bg-gray-50"
+                          ? "bg-brand-bg"
+                          : "hover:bg-brand-bg/50"
                       }`}
                     >
                       <div>
-                        <div className="text-sm font-semibold text-gray-900">
+                        <div className="text-xs font-bold text-brand-text">
                           {item.name}
                         </div>
-                        <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">
+                        <div className="text-[10px] text-brand-text-muted mt-0.5 line-clamp-1">
                           {item.description}
                         </div>
                       </div>
-                      <span className="text-sm font-semibold text-gray-900 shrink-0">
+                      <span className="text-xs font-bold text-brand-text shrink-0 font-serif">
                         £{item.price.toFixed(2)}
                       </span>
                     </button>
@@ -195,18 +217,31 @@ export default function Nav({ restaurant, menuCategories }: NavProps) {
           )}
         </div>
 
-        {/* Right: Auth + Cart */}
+        {/* Right: Theme Toggle + Auth + Cart */}
         <div className="flex items-center gap-2">
+          {/* Sun/Moon Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-brand-border bg-brand-card text-brand-text hover:bg-brand-bg transition-all cursor-pointer"
+            title="Toggle theme"
+          >
+            {theme === "light" ? (
+              <Moon className="h-4 w-4" />
+            ) : (
+              <Sun className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+            )}
+          </button>
+
           <AuthButton />
 
           <button
             onClick={() => setIsCartOpen(!isCartOpen)}
-            className="relative flex items-center gap-1.5 rounded-full bg-gray-900 px-3.5 py-2 text-sm font-semibold text-white transition-all hover:bg-gray-800 active:scale-95"
+            className="relative flex items-center gap-1.5 rounded-full bg-brand-primary px-3.5 py-1.5 text-xs font-bold text-brand-card transition-all active:scale-95 shadow-sm hover:opacity-90 cursor-pointer"
           >
             <ShoppingBag className="h-4 w-4" />
             <span>Cart</span>
             {totalItems > 0 && (
-              <span className="ml-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[11px] font-bold text-gray-900">
+              <span className="ml-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-brand-card text-[10px] font-extrabold text-brand-text">
                 {totalItems}
               </span>
             )}

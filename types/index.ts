@@ -88,6 +88,7 @@ export interface CartItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  note?: string;
 }
 
 export type OrderMode = "delivery" | "collection";
@@ -119,6 +120,7 @@ export interface Order {
   status: OrderStatus;
   subtotal: number;
   delivery_fee: number;
+  tip?: number;
   total: number;
   delivery_mode: OrderMode;
   customer_name: string | null;
@@ -142,6 +144,7 @@ export interface OrderItem {
   selected_extras: SelectedExtra[];
   unit_price: number;
   total_price: number;
+  note?: string | null;
 }
 
 // ============================================

@@ -18,24 +18,22 @@ const ModeToggle = React.memo(function ModeToggle() {
   ];
 
   return (
-    <div className="border-b border-gray-100 bg-white">
-      <div className="mx-auto max-w-7xl px-4 py-3 lg:px-6">
-        <div className="inline-flex rounded-full border border-gray-200 p-0.5">
-          {modes.map((mode) => (
-            <button
-              key={mode.value}
-              onClick={() => setOrderMode(mode.value)}
-              className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150 ${
-                orderMode === mode.value
-                  ? "bg-gray-900 text-white"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {mode.icon}
-              <span>{mode.label}</span>
-            </button>
-          ))}
-        </div>
+    <div className="mx-auto max-w-7xl px-4 py-4 lg:px-6">
+      <div className="inline-flex rounded-full border border-brand-border bg-brand-card/30 p-0.5">
+        {modes.map((mode) => (
+          <button
+            key={mode.value}
+            onClick={() => setOrderMode(mode.value)}
+            className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-150 active:scale-95 cursor-pointer ${
+              orderMode === mode.value
+                ? "bg-brand-primary text-brand-bg shadow-sm"
+                : "text-brand-text-muted hover:text-brand-text"
+            }`}
+          >
+            {mode.icon}
+            <span>{mode.label}</span>
+          </button>
+        ))}
       </div>
     </div>
   );

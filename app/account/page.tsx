@@ -20,6 +20,11 @@ export default function AccountSettingsPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [defaultAddress, setDefaultAddress] = useState("");
 
+  // Saved addresses state
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [newAddressLabel, setNewAddressLabel] = useState("Home");
+  const [isAddingAddress, setIsAddingAddress] = useState(false);
+
   // Security Credentials state
   const [newEmail, setNewEmail] = useState("");
   const [updatingEmail, setUpdatingEmail] = useState("");
@@ -162,11 +167,58 @@ export default function AccountSettingsPage() {
         setFullName(user.user_metadata?.full_name || "");
       }
       
+      // Load saved addresses
+      try {
+        const stored = JSON.parse(localStorage.getItem("kitchio-saved-addresses") || "[]");
+        setSavedAddresses(stored);
+      } catch {
+        // Ignore
+      }
+      
       setLoading(false);
     }
 
     loadProfile();
   }, []);
+
+  const handleAddAddress = (name: string, address: string) => {
+    if (!address.trim()) return;
+    const label = name.trim() || "Home";
+
+    if (savedAddresses.length >= 5) {
+      toast.error("You can save up to 5 addresses only.");
+      return;
+    }
+
+    const newAddr = {
+      id: `addr-${Date.now()}`,
+      name: label,
+      address: address.trim()
+    };
+
+    const updated = [...savedAddresses, newAddr];
+    setSavedAddresses(updated);
+    localStorage.setItem("kitchio-saved-addresses", JSON.stringify(updated));
+    toast.success(`Address "${label}" saved!`);
+
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase
+          .from("user_addresses")
+          .upsert({ user_id: user.id, name: label, address: address.trim() })
+          .then();
+      }
+    });
+  };
+
+  const handleDeleteAddress = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = savedAddresses.filter((a) => a.id !== id);
+    setSavedAddresses(updated);
+    localStorage.setItem("kitchio-saved-addresses", JSON.stringify(updated));
+    toast.success("Saved address removed.");
+  };
 
   // Suggestions click handler
   const handleSuggestionSelect = (suggestion: any) => {
@@ -439,6 +491,73 @@ export default function AccountSettingsPage() {
                         {suggestion.description}
                       </span>
                     </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Saved Locations Bento Module */}
+            <div className="pt-4 border-t border-zinc-105">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                  Saved Locations ({savedAddresses.length}/5)
+                </span>
+                {savedAddresses.length < 5 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!defaultAddress.trim()) {
+                        toast.error("Please enter/search an address in the search box first!");
+                        return;
+                      }
+                      const label = prompt("Enter location label (e.g. Home, Work, Gym):", "Home");
+                      if (label !== null) {
+                        handleAddAddress(label, defaultAddress);
+                      }
+                    }}
+                    className="text-[10px] font-bold text-[#0F8A5F] hover:underline"
+                  >
+                    + Save Current Address
+                  </button>
+                )}
+              </div>
+
+              {savedAddresses.length === 0 ? (
+                <p className="text-[10px] text-zinc-400 font-medium italic">
+                  No additional locations saved yet. Enter an address in the field above to save it.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {savedAddresses.map((addr) => (
+                    <div
+                      key={addr.id}
+                      onClick={() => {
+                        setDefaultAddress(addr.address);
+                        setPlaceId("loaded");
+                        toast.success(`Active address set to "${addr.name}"`);
+                      }}
+                      className={`group relative flex flex-col justify-between rounded-xl border p-3 cursor-pointer transition-all duration-150 ${
+                        defaultAddress === addr.address
+                          ? "border-[#0F8A5F] bg-[#0F8A5F]/5 ring-1 ring-[#0F8A5F]"
+                          : "border-zinc-200 bg-white hover:border-zinc-300"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold text-zinc-900 flex items-center gap-1">
+                          {addr.name === "Home" ? "🏠" : addr.name === "Work" ? "💼" : "📍"} {addr.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteAddress(addr.id, e)}
+                          className="text-[9px] font-bold text-red-500 opacity-0 group-hover:opacity-100 hover:underline transition-opacity"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-zinc-500 font-medium truncate w-full pr-4">
+                        {addr.address}
+                      </p>
+                    </div>
                   ))}
                 </div>
               )}

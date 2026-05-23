@@ -1,0 +1,161 @@
+KITCHIO - 100 POTENTIAL FEATURES
+==================================
+Read through this list and tell me the NUMBERS of any features you DON'T want.
+All the others will be implemented for you.
+
+════════════════════════════════════════
+  ORDERING EXPERIENCE
+════════════════════════════════════════
+
+1.  Real-time menu "out of stock" toggle — admin can mark items unavailable instantly from dashboard
+2.  Item popularity badge auto-computed from real order data (not just a manual flag)
+3.  "Order Again" shortcut — reorder a previous order in one tap from order history
+4.  Live cart quantity sync across multiple browser tabs
+5.  Minimum order countdown progress bar in the cart ("£4.50 away from free delivery!")
+6.  Calorie totals displayed in cart and at checkout
+7.  Item search on mobile with a dedicated floating search button
+8.  Recommended pairings on item modal ("Customers also ordered...")
+9.  Dietary filter tags (Vegan, Vegetarian, Gluten-Free, Halal) filterable on menu page
+10. Menu category "jump to top" button after scrolling far down
+11. Sticky floating cart total badge on desktop (always visible sidebar)
+12. Item image zoom on hover / tap in item modal
+13. Gift wrap / special packaging option at checkout (charge extra)
+14. Add a note per item (not just overall order notes)
+15. Save favourite items to a wishlist (logged-in only)
+16. "Notify me when back" button on sold-out items (sends email/SMS when restocked)
+17. Quantity caps per item (e.g. max 5 of a limited item)
+18. Bundle deals — pre-built combos at a discounted price
+19. Happy hour pricing — automatic price reduction during specified time windows
+20. Size variants shown as image swatches instead of text chips
+
+════════════════════════════════════════
+  CHECKOUT & PAYMENT
+════════════════════════════════════════
+
+21. Real Apple Pay and Google Pay via Stripe Payment Request Button (not mock)
+22. Save card for future orders (Stripe saved payment methods)
+23. Split payment — pay part now, part on delivery (e.g. cash on delivery balance)
+24. Tip selection at checkout (10% / 15% / 20% / custom)
+25. Scheduled order batching — place order now, choose any 30-min delivery window up to 7 days ahead
+26. Table ordering mode — enter table number instead of delivery address (for dine-in)
+27. Checkout with PayPal
+28. Checkout with Klarna (buy now pay later)
+29. Invoice / receipt emailed automatically after order placed
+30. VAT receipt download (PDF) from order history page
+31. Postcode-based delivery fee tiers (closer = cheaper delivery)
+32. Surge pricing indicator during peak hours ("High demand — delivery fee increased")
+33. Company/corporate billing — enter a purchase order number at checkout
+34. Address autocomplete with what3words support
+35. Saved delivery addresses — quickly select from up to 5 saved locations
+
+════════════════════════════════════════
+  LOYALTY & PROMOTIONS
+════════════════════════════════════════
+
+36. Loyalty points system — earn points per £1 spent, redeem for discounts
+37. Referral codes — share your link, both parties get a discount
+38. First-order discount auto-applied for new customers
+39. Birthday discount — set DOB in profile, get a voucher on your birthday
+40. Promo code usage limits (per customer, total uses, expiry date)
+41. Flash sales — time-limited discounts that count down live on the page
+42. Bulk discount — e.g. 3 for £20 on specific items
+43. Charity donation round-up at checkout ("Round up to £X for charity?")
+44. Stamp card — buy 9 get the 10th free (tracked digitally)
+45. Double points weekends configured by admin
+
+════════════════════════════════════════
+  CUSTOMER ACCOUNTS
+════════════════════════════════════════
+
+46. Order history with full itemised receipts
+47. Favourite restaurant / menu saved in profile
+48. Profile picture upload
+49. Dietary preference saved to account (auto-filter menu on login)
+50. Push notification opt-in for order status updates (browser push)
+51. SMS order status updates (Twilio integration)
+52. Email marketing opt-in at signup
+53. Account deletion / GDPR data export request page
+54. Two-factor authentication (TOTP / Authenticator app)
+55. Phone number login (OTP to SMS, no password needed)
+
+════════════════════════════════════════
+  ORDER TRACKING
+════════════════════════════════════════
+
+56. Live driver GPS tracking on a map in the tracking page
+57. Estimated arrival time that updates in real time
+58. Driver photo and name shown on tracking page
+59. Ability to contact driver via masked phone number
+60. "Order arrived?" confirmation button — customer marks delivery received
+61. Push/SMS notification when driver is 5 minutes away
+62. Proof of delivery photo uploaded by driver
+63. Multi-stop delivery — driver handles multiple orders, customer sees their queue position
+
+════════════════════════════════════════
+  ADMIN PANEL
+════════════════════════════════════════
+
+64. Live order volume chart (orders per hour today vs last week)
+65. Revenue dashboard — daily, weekly, monthly totals with charts
+66. Export orders to CSV / Excel
+67. Bulk menu import from a CSV file
+68. Menu item image upload directly from admin (instead of URLs)
+69. Category drag-and-drop reordering
+70. Opening hours management UI — set per-day hours and holiday closures
+71. Delivery zone editor — draw zones on a map, set per-zone fees
+72. Staff accounts — sub-admin roles (kitchen view only, driver view only)
+73. Kitchen display system (KDS) — dedicated full-screen tablet view for chefs
+74. Printer integration — auto-print order ticket on new order (receipt printer)
+75. Multi-location support — manage multiple restaurant branches from one admin
+76. Review / rating management — respond to customer ratings in admin
+77. Push notification to all customers (marketing blast)
+78. Coupon generator — create and manage bulk promo codes in admin
+79. Payout tracker — see how much Kitchio owes the restaurant and when
+
+════════════════════════════════════════
+  NOTIFICATIONS & COMMS
+════════════════════════════════════════
+
+80. Automated WhatsApp order confirmation messages (via Twilio/WhatsApp Business API)
+81. Discord webhook for admin: ping on every new order, low stock, or cancellation
+82. Slack webhook notifications for new orders
+83. Customer email: order confirmation, dispatch notification, delivery confirmation
+84. Admin email digest: end-of-day summary of all orders and revenue
+
+════════════════════════════════════════
+  REVIEWS & SOCIAL
+════════════════════════════════════════
+
+85. Post-order review prompt — 1-5 stars + comment after delivery confirmed
+86. Photo review — customers upload a photo of their food
+87. Public-facing review display on the menu page hero section
+88. Review gating — only allow reviews from verified buyers
+89. Google review redirect — prompt happy customers to also leave a Google review
+
+════════════════════════════════════════
+  SEO & MARKETING
+════════════════════════════════════════
+
+90. Shareable menu link — "Share this item" creates a pre-filled basket link
+91. SEO-optimised individual item pages (e.g. /menu/margherita-pizza)
+92. Sitemap auto-generation
+93. Open Graph tags for rich social media previews when link is shared
+94. Google Analytics 4 / Meta Pixel integration
+95. Affiliate link tracking — track which influencer drove the order
+
+════════════════════════════════════════
+  ACCESSIBILITY & UX
+════════════════════════════════════════
+
+96. Full keyboard navigation support across all pages
+97. Screen reader accessibility audit (ARIA labels, focus management)
+98. High contrast mode toggle
+99. Font size preference setting (small / normal / large)
+100. Offline mode — show menu even without internet (PWA / service worker)
+
+════════════════════════════════════════
+HOW TO USE THIS LIST
+════════════════════════════════════════
+Just reply with the feature NUMBERS you want REMOVED.
+Example: "Remove 13, 27, 28, 32, 43, 63"
+Everything else will be scheduled for implementation.

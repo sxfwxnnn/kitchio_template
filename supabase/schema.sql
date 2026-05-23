@@ -30,6 +30,19 @@ create table if not exists public.restaurants (
 );
 
 -- ============================================
+-- ADMIN USERS (defined early for policy dependencies)
+-- ============================================
+create table if not exists public.admin_users (
+  id uuid references auth.users(id) on delete cascade primary key,
+  email text not null unique,
+  role text not null default 'staff', -- 'admin', 'manager', 'staff'
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Turn on Row Level Security for admin access tracking
+alter table public.admin_users enable row level security;
+
+-- ============================================
 -- CATEGORIES
 -- ============================================
 create table if not exists public.categories (
@@ -39,7 +52,7 @@ create table if not exists public.categories (
   sort_order int default 0
 );
 
-create index idx_categories_restaurant on public.categories(restaurant_id, sort_order);
+create index if not exists idx_categories_restaurant on public.categories(restaurant_id, sort_order);
 
 -- ============================================
 -- MENU ITEMS
@@ -56,7 +69,7 @@ create table if not exists public.menu_items (
   calories int default 0
 );
 
-create index idx_menu_items_category on public.menu_items(category_id);
+create index if not exists idx_menu_items_category on public.menu_items(category_id);
 
 -- ============================================
 -- ITEM EXTRAS
@@ -68,7 +81,7 @@ create table if not exists public.item_extras (
   price numeric(10,2) not null default 0
 );
 
-create index idx_item_extras_item on public.item_extras(item_id);
+create index if not exists idx_item_extras_item on public.item_extras(item_id);
 
 -- ============================================
 -- OPTION GROUPS
@@ -80,7 +93,7 @@ create table if not exists public.option_groups (
   required boolean default false
 );
 
-create index idx_option_groups_item on public.option_groups(item_id);
+create index if not exists idx_option_groups_item on public.option_groups(item_id);
 
 -- ============================================
 -- OPTION CHOICES
@@ -92,7 +105,7 @@ create table if not exists public.option_choices (
   price numeric(10,2) not null default 0
 );
 
-create index idx_option_choices_group on public.option_choices(group_id);
+create index if not exists idx_option_choices_group on public.option_choices(group_id);
 
 -- ============================================
 -- PROFILES (linked to auth.users)
@@ -122,15 +135,20 @@ create trigger on_auth_user_created
 -- ============================================
 -- ORDERS
 -- ============================================
-create type order_status as enum (
-  'pending',
-  'accepted',
-  'preparing',
-  'courier_arrived',
-  'out_for_delivery',
-  'delivered',
-  'cancelled'
-);
+do $$
+begin
+  create type order_status as enum (
+    'pending',
+    'accepted',
+    'preparing',
+    'courier_arrived',
+    'out_for_delivery',
+    'delivered',
+    'cancelled'
+  );
+exception
+  when duplicate_object then null;
+end $$;
 
 create table if not exists public.orders (
   id uuid primary key default uuid_generate_v4(),
@@ -139,6 +157,7 @@ create table if not exists public.orders (
   status order_status default 'pending',
   subtotal numeric(10,2) not null default 0,
   delivery_fee numeric(10,2) not null default 0,
+  tip numeric(10,2) not null default 0,
   total numeric(10,2) not null default 0,
   delivery_mode text not null default 'delivery',
   customer_name text,
@@ -152,8 +171,8 @@ create table if not exists public.orders (
   created_at timestamptz default now()
 );
 
-create index idx_orders_user on public.orders(user_id, created_at desc);
-create index idx_orders_restaurant on public.orders(restaurant_id, created_at desc);
+create index if not exists idx_orders_user on public.orders(user_id, created_at desc);
+create index if not exists idx_orders_restaurant on public.orders(restaurant_id, created_at desc);
 
 -- ============================================
 -- ORDER ITEMS
@@ -167,10 +186,13 @@ create table if not exists public.order_items (
   selected_options jsonb default '[]'::jsonb,
   selected_extras jsonb default '[]'::jsonb,
   unit_price numeric(10,2) not null default 0,
-  total_price numeric(10,2) not null default 0
+  total_price numeric(10,2) not null default 0,
+  note text
 );
 
-create index idx_order_items_order on public.order_items(order_id);
+alter table public.order_items add column if not exists note text;
+
+create index if not exists idx_order_items_order on public.order_items(order_id);
 
 -- ============================================
 -- ROW LEVEL SECURITY
@@ -178,59 +200,75 @@ create index idx_order_items_order on public.order_items(order_id);
 
 -- Restaurants: public read
 alter table public.restaurants enable row level security;
+drop policy if exists "Restaurants are publicly readable" on public.restaurants;
 create policy "Restaurants are publicly readable"
   on public.restaurants for select using (true);
 
 -- Categories: public read
 alter table public.categories enable row level security;
+drop policy if exists "Categories are publicly readable" on public.categories;
 create policy "Categories are publicly readable"
   on public.categories for select using (true);
+drop policy if exists "Admins can manage all categories" on public.categories;
 create policy "Admins can manage all categories"
   on public.categories for all
   using (exists (select 1 from public.admin_users where admin_users.id = auth.uid()));
 
 -- Menu items: public read
 alter table public.menu_items enable row level security;
+drop policy if exists "Menu items are publicly readable" on public.menu_items;
 create policy "Menu items are publicly readable"
   on public.menu_items for select using (true);
+drop policy if exists "Admins can manage all menu items" on public.menu_items;
 create policy "Admins can manage all menu items"
   on public.menu_items for all
   using (exists (select 1 from public.admin_users where admin_users.id = auth.uid()));
 
 -- Item extras: public read
 alter table public.item_extras enable row level security;
+drop policy if exists "Item extras are publicly readable" on public.item_extras;
 create policy "Item extras are publicly readable"
   on public.item_extras for select using (true);
 
 -- Option groups: public read
 alter table public.option_groups enable row level security;
+drop policy if exists "Option groups are publicly readable" on public.option_groups;
 create policy "Option groups are publicly readable"
   on public.option_groups for select using (true);
 
 -- Option choices: public read
 alter table public.option_choices enable row level security;
+drop policy if exists "Option choices are publicly readable" on public.option_choices;
 create policy "Option choices are publicly readable"
   on public.option_choices for select using (true);
 
 -- Profiles: users can read/update own profile
 alter table public.profiles enable row level security;
+drop policy if exists "Users can read own profile" on public.profiles;
 create policy "Users can read own profile"
   on public.profiles for select using (auth.uid() = id);
+drop policy if exists "Users can update own profile" on public.profiles;
 create policy "Users can update own profile"
   on public.profiles for update using (auth.uid() = id);
 
--- Orders: users can read own orders, service role can insert
+-- Orders: users can read own orders, service role can insert, anyone can read by ID
 alter table public.orders enable row level security;
+drop policy if exists "Users can read own orders" on public.orders;
 create policy "Users can read own orders"
   on public.orders for select using (auth.uid() = user_id);
+drop policy if exists "Anyone can select an order by its ID" on public.orders;
+create policy "Anyone can select an order by its ID"
+  on public.orders for select using (true);
+drop policy if exists "Users can insert own orders" on public.orders;
 create policy "Users can insert own orders"
   on public.orders for insert with check (auth.uid() = user_id);
--- Allow anon inserts for webhook-created orders
+drop policy if exists "Service role can insert orders" on public.orders;
 create policy "Service role can insert orders"
   on public.orders for insert with check (true);
 
--- Order items: users can read items from own orders
+-- Order items: users can read items from own orders, anyone can read order items
 alter table public.order_items enable row level security;
+drop policy if exists "Users can read own order items" on public.order_items;
 create policy "Users can read own order items"
   on public.order_items for select using (
     exists (
@@ -239,13 +277,22 @@ create policy "Users can read own order items"
       and orders.user_id = auth.uid()
     )
   );
+drop policy if exists "Anyone can select order items" on public.order_items;
+create policy "Anyone can select order items"
+  on public.order_items for select using (true);
+drop policy if exists "Service role can insert order items" on public.order_items;
 create policy "Service role can insert order items"
   on public.order_items for insert with check (true);
 
 -- ============================================
 -- REALTIME (for order tracking)
 -- ============================================
-alter publication supabase_realtime add table public.orders;
+do $$
+begin
+  alter publication supabase_realtime add table public.orders;
+exception
+  when duplicate_object then null;
+end $$;
 
 -- ============================================
 -- SEED DATA
@@ -293,30 +340,20 @@ insert into public.restaurants (
 -- ============================================
 -- PROMO CODES & ADMIN CONTEXT
 -- ============================================
--- Create an admin users table for authorization mapping
-create table if not exists public.admin_users (
-  id uuid references auth.users(id) on delete cascade primary key,
-  email text not null unique,
-  role text not null default 'staff', -- 'admin', 'manager', 'staff'
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
--- Turn on Row Level Security for admin access tracking
-alter table public.admin_users enable row level security;
-
+drop policy if exists "Allow public read access to verify admin profiles" on public.admin_users;
 create policy "Allow public read access to verify admin profiles" 
   on public.admin_users for select using (true);
 
 -- Update the main orders table security policies to look up admin table
+drop policy if exists "Admins can manage all orders" on public.orders;
 create policy "Admins can manage all orders" 
   on public.orders for all 
   using (exists (select 1 from public.admin_users where admin_users.id = auth.uid()));
 
+drop policy if exists "Admins can manage all order items" on public.order_items;
 create policy "Admins can manage all order items"
   on public.order_items for all
   using (exists (select 1 from public.admin_users where admin_users.id = auth.uid()));
-
--- TODO PROMPT 4: Add restaurant_users table for complex multi-vendor multi-tenant RBAC admin access
 
 create table if not exists public.promo_codes (
   id uuid primary key default uuid_generate_v4(),
@@ -330,8 +367,14 @@ create table if not exists public.promo_codes (
 );
 
 alter table public.promo_codes enable row level security;
+drop policy if exists "Promo codes are publicly readable" on public.promo_codes;
 create policy "Promo codes are publicly readable"
   on public.promo_codes for select using (true);
+
+drop policy if exists "Admins can manage all promo codes" on public.promo_codes;
+create policy "Admins can manage all promo codes"
+  on public.promo_codes for all
+  using (exists (select 1 from public.admin_users where admin_users.id = auth.uid()));
 
 insert into public.promo_codes (code, discount_type, amount, min_order_value)
 values ('20SPECIAL', 'percentage', 20.00, 15.00)
@@ -340,4 +383,3 @@ on conflict (code) do nothing;
 insert into public.promo_codes (code, discount_type, amount, min_order_value)
 values ('SAVE5', 'fixed', 5.00, 20.00)
 on conflict (code) do nothing;
-

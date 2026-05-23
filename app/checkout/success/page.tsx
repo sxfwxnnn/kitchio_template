@@ -21,23 +21,12 @@ function SuccessDetails() {
     }
   }, []);
 
-  // Automatic redirect timer
+  // Automatic instant redirect
   useEffect(() => {
-    if (!orderId) return;
-
-    const timer = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          router.push(`/orders/${orderId}`);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [orderId, router]);
+    if (orderId) {
+      window.location.href = `/orders/${orderId}`;
+    }
+  }, [orderId]);
 
   return (
     <div className="w-full max-w-sm text-center">

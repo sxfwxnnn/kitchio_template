@@ -21,17 +21,37 @@ export async function updateOrderStatus(orderId: string, status: string) {
     throw new Error(`KDS pipeline commit failure: ${error.message}`);
   }
 
+  // Trigger Discord webhook when order is accepted
+  if (status === "accepted") {
+    try {
+      const { sendOrderDiscordWebhook } = await import("@/lib/discord");
+      await sendOrderDiscordWebhook(orderId);
+    } catch (discordErr) {
+      console.error("Failed to trigger Discord webhook in KDS update:", discordErr);
+    }
+  }
+
+  // Trigger SMS Status Notification (Twilio or simulated)
+  try {
+    const { sendOrderStatusSMS } = await import("@/lib/sms");
+    void sendOrderStatusSMS(orderId, status);
+  } catch (smsErr) {
+    console.error("SMS notification send failure:", smsErr);
+  }
+
   revalidatePath("/admin");
   return data;
 }
 
-/**
- * Promotes any logged-in user account to an admin/staff role inside public.admin_users.
- * Bypasses RLS write-blocks by instantiating a backend service role client.
- */
-export async function promoteToAdminAction(userId: string, email: string) {
+export async function promoteToAdminAction(userId: string, email: string, enteredCode: string) {
   if (!userId || !email) {
     throw new Error("Missing required user credentials for promotion.");
+  }
+
+  // Validate setup code securely on the server
+  const setupCode = process.env.ADMIN_SETUP_CODE || process.env.NEXT_PUBLIC_ADMIN_SETUP_CODE || "KITCHIO_ADMIN_2026";
+  if (!enteredCode || enteredCode.trim() !== setupCode.trim()) {
+    throw new Error("Invalid Administrative Gatekeeper Passcode. Promotion denied.");
   }
 
   const { createClient: createSupabaseAdmin } = await import("@supabase/supabase-js");
@@ -113,6 +133,14 @@ export async function declineAndRefundOrder(orderId: string) {
         // We log the warning but don't crash, since the order status was already set to cancelled
       }
     }
+  }
+
+  // Trigger SMS Status Notification for cancellation
+  try {
+    const { sendOrderStatusSMS } = await import("@/lib/sms");
+    void sendOrderStatusSMS(orderId, "cancelled");
+  } catch (smsErr) {
+    console.error("SMS notification send failure for cancel:", smsErr);
   }
 
   revalidatePath("/admin");
@@ -396,5 +424,103 @@ export async function seedMenuFromDemo() {
   revalidatePath("/admin/menu");
   revalidatePath("/");
   return { status: "success", count: itemsToInsert.length };
+}
+
+/**
+ * Creates a promo code inside public.promo_codes.
+ * Bypasses RLS write blocks by utilizing a Node.js backend admin client.
+ */
+export async function createPromoCodeAction(params: {
+  code: string;
+  discountType: "percentage" | "fixed";
+  amount: number;
+  minOrderValue: number;
+  expiresAt: string | null;
+}) {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  if (!serviceRoleKey || !supabaseUrl) {
+    throw new Error("Supabase environment configuration is missing service keys.");
+  }
+
+  const { createClient: createSupabaseAdmin } = await import("@supabase/supabase-js");
+  const supabaseAdmin = createSupabaseAdmin(supabaseUrl, serviceRoleKey);
+
+  const { data, error } = await supabaseAdmin
+    .from("promo_codes")
+    .insert({
+      code: params.code.trim().toUpperCase(),
+      discount_type: params.discountType,
+      amount: params.amount,
+      min_order_value: params.minOrderValue,
+      expires_at: params.expiresAt,
+      active: true
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Promo code insert error: ${error.message}`);
+  }
+
+  return data;
+}
+
+/**
+ * Deletes a promo code from public.promo_codes.
+ * Bypasses RLS by using the admin client.
+ */
+export async function deletePromoCodeAction(id: string) {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  if (!serviceRoleKey || !supabaseUrl) {
+    throw new Error("Supabase environment configuration is missing service keys.");
+  }
+
+  const { createClient: createSupabaseAdmin } = await import("@supabase/supabase-js");
+  const supabaseAdmin = createSupabaseAdmin(supabaseUrl, serviceRoleKey);
+
+  const { data, error } = await supabaseAdmin
+    .from("promo_codes")
+    .delete()
+    .eq("id", id)
+    .select();
+
+  if (error) {
+    throw new Error(`Promo code delete error: ${error.message}`);
+  }
+
+  return data;
+}
+
+/**
+ * Toggles promo code activation status inside public.promo_codes.
+ * Bypasses RLS by using the admin client.
+ */
+export async function togglePromoCodeStatusAction(id: string, active: boolean) {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  if (!serviceRoleKey || !supabaseUrl) {
+    throw new Error("Supabase environment configuration is missing service keys.");
+  }
+
+  const { createClient: createSupabaseAdmin } = await import("@supabase/supabase-js");
+  const supabaseAdmin = createSupabaseAdmin(supabaseUrl, serviceRoleKey);
+
+  const { data, error } = await supabaseAdmin
+    .from("promo_codes")
+    .update({ active })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Promo code update error: ${error.message}`);
+  }
+
+  return data;
 }
 

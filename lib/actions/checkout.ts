@@ -178,16 +178,18 @@ export async function createPaymentIntent(params: {
     const paymentIntent = await stripe.paymentIntents.create(paymentIntentParams);
 
     // Update the order in the database to link it to this PaymentIntent
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    await supabase
-      .from("orders")
-      .update({ stripe_payment_intent: paymentIntent.id })
-      .eq("id", params.orderId);
+    if (supabaseUrl && serviceRoleKey) {
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+      await supabase
+        .from("orders")
+        .update({ stripe_payment_intent: paymentIntent.id })
+        .eq("id", params.orderId);
+    }
 
     return { clientSecret: paymentIntent.client_secret, error: null };
   } catch (err) {

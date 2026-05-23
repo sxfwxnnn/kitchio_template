@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { promoteToAdminAction } from "@/lib/actions/admin";
-import { Shield, Sparkles, Loader2, ArrowRight, UserCheck } from "lucide-react";
+import { Shield, Sparkles, Loader2, ArrowRight, UserCheck, KeyRound, Eye, EyeOff, Lock } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -16,6 +16,8 @@ export default function AdminSetupPage() {
   const [promoting, setPromoting] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [enteredCode, setEnteredCode] = useState("");
+  const [showCode, setShowCode] = useState(false);
 
   useEffect(() => {
     async function checkUserSession() {
@@ -44,13 +46,29 @@ export default function AdminSetupPage() {
 
   const handlePromotion = async () => {
     if (!user) return;
+    if (!enteredCode.trim()) {
+      toast.error("Please enter the admin promotion code.");
+      return;
+    }
     setPromoting(true);
     try {
-      await promoteToAdminAction(user.id, user.email);
+      console.log("[AdminSetup] Triggering promotion for:", user.id, user.email);
+      await promoteToAdminAction(user.id, user.email, enteredCode);
       setIsAdmin(true);
       toast.success("Account elevated to Admin successfully!");
     } catch (err: any) {
-      toast.error(err.message || "Failed to promote account.");
+      console.error("[AdminSetup] Onboarding promotion failed:", err);
+      const errMsg = err.message || "";
+      if (
+        errMsg.includes("admin_users") &&
+        (errMsg.includes("does not exist") || errMsg.includes("schema cache") || errMsg.includes("not find the table"))
+      ) {
+        toast.error("Database table 'admin_users' is missing! Please copy the SQL from 'supabase/schema.sql' and run it in your Supabase Project SQL Editor first.", {
+          duration: 10000,
+        });
+      } else {
+        toast.error(errMsg || "Failed to promote account. Please verify the passcode.");
+      }
     } finally {
       setPromoting(false);
     }
@@ -124,7 +142,7 @@ export default function AdminSetupPage() {
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
+          <form onSubmit={(e) => { e.preventDefault(); handlePromotion(); }} className="space-y-6">
             <div className="bg-zinc-950/60 border border-zinc-800 rounded-xl p-4 space-y-2">
               <p className="text-xs text-zinc-500 uppercase font-mono font-bold tracking-wider">Active Session</p>
               <div className="flex flex-col">
@@ -133,14 +151,41 @@ export default function AdminSetupPage() {
               </div>
             </div>
 
-            <p className="text-xs text-zinc-400 leading-relaxed text-center">
-              Click the button below to register this account inside the database admin mappings. This grants full access to active KDS dashboards, Menu managers, and refund capabilities.
-            </p>
+            <div className="space-y-2">
+              <label className="text-xs text-zinc-400 font-bold uppercase tracking-wider font-mono flex items-center gap-1.5">
+                <Lock className="h-3.5 w-3.5 text-blue-400" />
+                Administrative Passcode
+              </label>
+              <div className="relative rounded-xl shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+                  <KeyRound className="h-4 w-4" />
+                </div>
+                <input
+                  type={showCode ? "text" : "password"}
+                  value={enteredCode}
+                  onChange={(e) => setEnteredCode(e.target.value)}
+                  placeholder="Enter secure passcode..."
+                  className="block w-full pl-10 pr-10 py-3 bg-zinc-950 border border-zinc-800/80 rounded-xl text-zinc-100 placeholder-zinc-650 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all font-mono text-sm leading-relaxed"
+                  disabled={promoting}
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCode(!showCode)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-500 hover:text-zinc-300 transition-colors"
+                >
+                  {showCode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <p className="text-[11px] text-zinc-500 leading-normal">
+                Enter the unique gatekeeper code to elevate your account to a gourmet Kitchio Administrator.
+              </p>
+            </div>
 
             <button
-              onClick={handlePromotion}
-              disabled={promoting}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-500 active:scale-[0.98] transition-all cursor-pointer shadow-md disabled:opacity-50"
+              type="submit"
+              disabled={promoting || !enteredCode.trim()}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-500 active:scale-[0.98] transition-all cursor-pointer shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {promoting ? (
                 <>
@@ -161,7 +206,7 @@ export default function AdminSetupPage() {
             >
               Cancel and Return Home
             </Link>
-          </div>
+          </form>
         )}
       </div>
     </div>

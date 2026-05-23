@@ -1,27 +1,21 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
+import { tenantConfig } from "@/config/tenant";
 import { Toaster } from "sonner";
 
-const inter = Inter({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-plus-jakarta",
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
-  title: "Kitchio | Order Online — Gourmet Pizza & Artisan Eats",
+  title: `${tenantConfig.restaurantName} | Order Online — Kitchio`,
   description:
-    "Order food online from Kitchio. Gourmet Artisan Pizza & Sides. Delivery & collection available.",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Kitchio",
-  },
+    `Order food online from ${tenantConfig.restaurantName}. ${tenantConfig.cuisine}. Delivery & collection available.`,
 };
-
-// TODO PROMPT 4: Add restaurant admin dashboard integration
 
 export default function RootLayout({
   children,
@@ -29,17 +23,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html lang="en" className={plusJakarta.variable} suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#09090b" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('kitchio-theme');
+                  if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
       </head>
-      <body className="font-sans antialiased bg-white" suppressHydrationWarning>
-        <CartProvider>
-          {children}
-          <Toaster position="top-center" richColors />
-        </CartProvider>
+      <body className="font-sans antialiased bg-brand-bg text-brand-text transition-colors duration-150" suppressHydrationWarning>
+        <CartProvider>{children}</CartProvider>
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );

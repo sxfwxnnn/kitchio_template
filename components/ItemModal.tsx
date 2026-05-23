@@ -21,6 +21,7 @@ export default function ItemModal({ item, onClose }: ItemModalProps) {
   );
   const [quantity, setQuantity] = useState(1);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [note, setNote] = useState("");
 
   // Reset state when item changes
   useEffect(() => {
@@ -28,6 +29,7 @@ export default function ItemModal({ item, onClose }: ItemModalProps) {
     setQuantity(1);
     setSelectedExtras({});
     setImgLoaded(false);
+    setNote("");
     
     // Auto-select first choice for option groups
     const opts: Record<
@@ -94,31 +96,31 @@ export default function ItemModal({ item, onClose }: ItemModalProps) {
       .filter((e) => selectedExtras[e.id])
       .map((e) => ({ id: e.id, name: e.name, price: e.price }));
 
-    addItem(item.id, item.name, item.price, quantity, opts, extras);
+    addItem(item.id, item.name, item.price, quantity, opts, extras, note.trim() || undefined);
     onClose();
   };
 
   return (
     <div
-      className="fixed inset-0 z-[999] flex items-end justify-center bg-black/45 sm:items-center sm:p-4 animate-fade-in"
+      className="fixed inset-0 z-[999] flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4 animate-fade-in"
       onClick={onClose}
     >
       {/* Premium Desktop 2-Column Modal */}
       <div
-        className="relative w-full max-w-[820px] rounded-t-2xl bg-white sm:rounded-2xl overflow-hidden max-h-[90vh] sm:max-h-[85vh] flex flex-col sm:flex-row animate-slide-up shadow-2xl"
+        className="relative w-full max-w-[820px] rounded-t-2xl bg-brand-card sm:rounded-2xl overflow-hidden max-h-[90vh] sm:max-h-[85vh] flex flex-col sm:flex-row animate-slide-up shadow-2xl border border-brand-border"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button on Desktop/Tablet - Elevated Position */}
+        {/* Close Button - Elevated Position */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 z-25 flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white shadow-sm hover:bg-black/75 transition-colors"
+          className="absolute right-4 top-4 z-25 flex h-8 w-8 items-center justify-center rounded-full border border-brand-border bg-brand-bg text-brand-text-muted shadow-lg hover:bg-brand-bg/80 hover:text-brand-text transition-all cursor-pointer"
           aria-label="Close"
         >
           <X className="h-4.5 w-4.5" />
         </button>
 
         {/* LEFT SIDE: Big Beautiful Food Cover Image */}
-        <div className="relative h-48 sm:h-auto sm:w-[45%] bg-gray-100 flex-shrink-0">
+        <div className="relative h-48 sm:h-auto sm:w-[45%] bg-brand-bg flex-shrink-0">
           {!imgLoaded && <div className="absolute inset-0 skeleton" />}
           <Image
             src={item.image}
@@ -126,7 +128,7 @@ export default function ItemModal({ item, onClose }: ItemModalProps) {
             fill
             sizes="(max-width: 640px) 100vw, 400px"
             className={`object-cover transition-opacity duration-300 ${
-              imgLoaded ? "opacity-100" : "opacity-0"
+              imgLoaded ? "opacity-100 animate-fade-in" : "opacity-0"
             }`}
             onLoad={() => setImgLoaded(true)}
             priority
@@ -134,14 +136,14 @@ export default function ItemModal({ item, onClose }: ItemModalProps) {
         </div>
 
         {/* RIGHT SIDE: Customizable Details & Options Selection */}
-        <div className="flex-1 flex flex-col max-h-[60vh] sm:max-h-[80vh]">
+        <div className="flex-1 flex flex-col max-h-[60vh] sm:max-h-[80vh] bg-brand-card text-brand-text">
           {/* Options Panel Content */}
           <div className="overflow-y-auto p-6 flex-1 space-y-5">
             {/* Header info */}
             <div>
-              <h2 className="text-xl font-bold text-gray-900 leading-tight">{item.name}</h2>
-              <p className="mt-1 text-xs text-gray-400">
-                Hi-fidelity options custom selection
+              <h2 className="text-xl font-extrabold tracking-tight text-brand-text leading-tight">{item.name}</h2>
+              <p className="mt-1 text-[11px] text-brand-text-muted font-medium tracking-wide">
+                Customise your order below
               </p>
             </div>
 
@@ -149,7 +151,7 @@ export default function ItemModal({ item, onClose }: ItemModalProps) {
             {item.optionGroups && item.optionGroups.length > 0 && (
               <button
                 type="button"
-                className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-500 hover:text-gray-900 border border-gray-200 px-2.5 py-1 rounded bg-white transition-all uppercase tracking-wider"
+                className="inline-flex items-center gap-1 text-[9px] font-bold text-brand-text-muted hover:text-brand-text border border-brand-border px-2.5 py-1 rounded bg-brand-bg transition-all uppercase tracking-wider"
               >
                 <ArrowLeft className="h-3 w-3" />
                 Back to sizes
@@ -158,13 +160,13 @@ export default function ItemModal({ item, onClose }: ItemModalProps) {
 
             {/* Option Groups (Rendered as premium Horizontal Button Chips) */}
             {item.optionGroups?.map((group) => (
-              <div key={group.id} className="pt-3 border-t border-gray-100">
-                <div className="flex items-center justify-between mb-3.5">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">
+              <div key={group.id} className="pt-4 border-t border-white/10">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-[10px] font-bold uppercase tracking-wider text-brand-text-muted">
                     {group.name}
                   </h3>
                   {group.required && (
-                    <span className="rounded bg-blue-50 border border-blue-100 px-2 py-0.5 text-[9px] font-bold text-blue-600 uppercase">
+                    <span className="rounded bg-brand-primary/10 border border-brand-primary/20 px-2 py-0.5 text-[8px] font-bold text-brand-primary uppercase tracking-wide">
                       Required
                     </span>
                   )}
@@ -189,15 +191,15 @@ export default function ItemModal({ item, onClose }: ItemModalProps) {
                             },
                           }))
                         }
-                        className={`py-2 px-3 text-xs font-semibold rounded-lg border text-center transition-all duration-150 ${
+                        className={`py-2.5 px-3 text-xs font-semibold rounded-xl border text-center transition-all duration-150 active:scale-95 cursor-pointer ${
                           isSelected
-                            ? "bg-[#0066fe] border-[#0066fe] text-white shadow-sm font-bold scale-[1.01]"
-                            : "bg-white border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                            ? "bg-brand-primary border-brand-primary text-white font-bold scale-[1.01] shadow-md"
+                            : "bg-brand-bg border-brand-border text-brand-text hover:border-brand-text/30 hover:bg-brand-bg"
                         }`}
                       >
                         <div className="flex items-center justify-between">
                           <span>{option.name}</span>
-                          <span className={isSelected ? "text-blue-100" : "text-gray-400"}>
+                          <span className={isSelected ? "text-white/80" : "text-brand-text-muted"}>
                             {option.price > 0 ? `+£${option.price.toFixed(2)}` : ""}
                           </span>
                         </div>
@@ -210,20 +212,20 @@ export default function ItemModal({ item, onClose }: ItemModalProps) {
 
             {/* Extras (Rendered cleanly as vertical items or list) */}
             {item.extras.length > 0 && (
-              <div className="pt-4 border-t border-gray-100">
-                <h3 className="mb-3.5 text-xs font-bold uppercase tracking-wider text-gray-500">
+              <div className="pt-4 border-t border-brand-border">
+                <h3 className="mb-3 text-[10px] font-bold uppercase tracking-wider text-brand-text-muted">
                   Add extras
                 </h3>
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   {item.extras.map((extra) => {
                     const isChecked = !!selectedExtras[extra.id];
                     return (
                       <label
                         key={extra.id}
-                        className={`flex cursor-pointer items-center justify-between py-2 px-2.5 rounded-lg border transition-all duration-150 ${
+                        className={`flex cursor-pointer items-center justify-between py-2 px-3 rounded-xl border transition-all duration-150 ${
                           isChecked
-                            ? "border-gray-900 bg-gray-50/50"
-                            : "border-gray-150 hover:bg-gray-50"
+                            ? "border-brand-primary/30 bg-brand-primary/5"
+                            : "border-brand-border bg-brand-bg hover:bg-brand-bg/80"
                         }`}
                       >
                         <div className="flex items-center gap-2.5">
@@ -233,16 +235,16 @@ export default function ItemModal({ item, onClose }: ItemModalProps) {
                             onChange={() =>
                               setSelectedExtras((prev) => ({
                                 ...prev,
-                                [extra.id]: !prev[extra.id],
+                                  [extra.id]: !prev[extra.id],
                               }))
                             }
-                            className="h-4.5 w-4.5 rounded border-gray-300 text-gray-900 focus:ring-gray-900 cursor-pointer"
+                            className="h-4 w-4 rounded border-brand-border text-brand-primary focus:ring-brand-primary cursor-pointer"
                           />
-                          <span className="text-xs text-gray-900 font-medium">
+                          <span className="text-xs text-brand-text font-semibold">
                             {extra.name}
                           </span>
                         </div>
-                        <span className="text-xs text-gray-500 font-semibold font-serif">
+                        <span className="text-xs text-brand-text-muted font-semibold font-serif">
                           +£{extra.price.toFixed(2)}
                         </span>
                       </label>
@@ -251,42 +253,60 @@ export default function ItemModal({ item, onClose }: ItemModalProps) {
                 </div>
               </div>
             )}
+
+            {/* Special Instructions / Notes */}
+            <div className="pt-4 border-t border-brand-border">
+              <h3 className="mb-2 text-[10px] font-bold uppercase tracking-wider text-brand-text-muted">
+                Special Instructions (Optional)
+              </h3>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="e.g. No onions, extra spicy, sauce on the side..."
+                rows={2}
+                maxLength={150}
+                className="w-full rounded-xl border border-brand-border bg-brand-bg px-3 py-2 text-xs text-brand-text placeholder:text-brand-text-muted focus:border-brand-primary focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all resize-none"
+              />
+              <div className="text-right text-[9px] text-brand-text-muted mt-1">
+                {note.length}/150 characters
+              </div>
+            </div>
           </div>
 
-          {/* Sticky footer matching inspiration */}
-          <div className="border-t border-gray-100 bg-white p-4.5 flex items-center justify-between gap-4">
+          {/* Sticky footer */}
+          <div className="border-t border-brand-border bg-brand-card p-4 flex items-center justify-between gap-4">
             {/* Quantity Selector on left */}
-            <div className="flex items-center rounded-lg border border-gray-250 bg-white p-1">
+            <div className="flex items-center rounded-xl border border-brand-border bg-brand-bg p-1">
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="flex h-7.5 w-7.5 items-center justify-center rounded text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                className="flex h-7 w-7 items-center justify-center rounded text-brand-text-muted hover:bg-brand-bg hover:text-brand-text transition-colors cursor-pointer"
                 aria-label="Decrease quantity"
               >
                 <Minus className="h-4 w-4" />
               </button>
-              <span className="w-8 text-center text-xs font-bold text-gray-900">
+              <span className="w-8 text-center text-xs font-bold text-brand-text">
                 {quantity}
               </span>
               <button
                 onClick={() => setQuantity(quantity + 1)}
-                className="flex h-7.5 w-7.5 items-center justify-center rounded text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                className="flex h-7 w-7 items-center justify-center rounded text-brand-text-muted hover:bg-brand-bg hover:text-brand-text transition-colors cursor-pointer"
                 aria-label="Increase quantity"
               >
                 <Plus className="h-4 w-4" />
               </button>
             </div>
 
-            {/* Premium restaurant green Add to Cart button on right */}
+            {/* Premium Add to Cart button on right */}
             <button
               onClick={handleAddToOrder}
               disabled={!allRequiredSelected}
-              className={`flex-1 flex items-center justify-between rounded-xl px-5 py-3 text-xs font-bold text-white transition-all shadow-sm ${
+              className={`flex-1 flex items-center justify-between rounded-xl px-5 py-3 text-xs font-bold text-white transition-all shadow-lg cursor-pointer ${
                 allRequiredSelected
-                  ? "bg-[#0F8A5F] hover:bg-[#0D7A54] active:scale-[0.99]"
-                  : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                  ? "bg-brand-primary hover:bg-brand-primary/90 hover:shadow-[0_0_15px_rgba(240,90,61,0.25)] active:scale-[0.99]"
+                  : "bg-zinc-900 text-zinc-500 cursor-not-allowed border border-white/5"
               }`}
             >
-              <span>Add to Cart</span>
+              <span className="uppercase tracking-wider">Add to Cart</span>
               <span className="font-serif text-sm">£{totalPrice.toFixed(2)}</span>
             </button>
           </div>

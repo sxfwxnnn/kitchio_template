@@ -22,21 +22,23 @@ export default function OrderTrackingPage() {
     const supabase = createClient();
 
     async function fetchOrder() {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*, order_items(*)")
-        .eq("id", orderId)
-        .single();
+      try {
+        const { getGuestOrder } = await import("@/lib/actions/orders");
+        const { order: data, error } = await getGuestOrder(orderId);
 
-      if (error || !data) {
-        setError("Order not found");
+        if (error || !data) {
+          setError(error || "Order not found");
+          setLoading(false);
+          return;
+        }
+
+        setOrder(data as any);
+        setItems((data.items || []) as OrderItem[]);
         setLoading(false);
-        return;
+      } catch (err) {
+        setError("Failed to load order");
+        setLoading(false);
       }
-
-      setOrder(data as Order);
-      setItems((data.order_items || []) as OrderItem[]);
-      setLoading(false);
     }
 
     fetchOrder();

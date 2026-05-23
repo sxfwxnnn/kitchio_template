@@ -29,7 +29,8 @@ interface CartItemsContextType {
     basePrice: number,
     quantity: number,
     selectedOptions: SelectedOption[],
-    selectedExtras: SelectedExtra[]
+    selectedExtras: SelectedExtra[],
+    note?: string
   ) => void;
   removeItem: (cartLineId: string) => void;
   updateQuantity: (cartLineId: string, quantity: number) => void;
@@ -57,7 +58,8 @@ const CartUIContext = createContext<CartUIContextType | null>(null);
 function generateCartLineId(
   itemId: string,
   options: SelectedOption[],
-  extras: SelectedExtra[]
+  extras: SelectedExtra[],
+  note?: string
 ): string {
   const optKey = options
     .map((o) => `${o.groupId}:${o.optionId}`)
@@ -67,7 +69,8 @@ function generateCartLineId(
     .map((e) => e.id)
     .sort()
     .join("|");
-  return `${itemId}__${optKey}__${extKey}`;
+  const noteKey = note ? `__note:${note.trim().toLowerCase()}` : "";
+  return `${itemId}__${optKey}__${extKey}${noteKey}`;
 }
 
 function cartReducer(state: CartItem[], action: CartAction): CartItem[] {
@@ -76,7 +79,8 @@ function cartReducer(state: CartItem[], action: CartAction): CartItem[] {
       const lineId = generateCartLineId(
         action.payload.itemId,
         action.payload.selectedOptions,
-        action.payload.selectedExtras
+        action.payload.selectedExtras,
+        action.payload.note
       );
       const existing = state.find((item) => item.cartLineId === lineId);
       if (existing) {
@@ -186,7 +190,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       basePrice: number,
       quantity: number,
       selectedOptions: SelectedOption[],
-      selectedExtras: SelectedExtra[]
+      selectedExtras: SelectedExtra[],
+      note?: string
     ) => {
       const optionsTotal = selectedOptions.reduce(
         (sum, o) => sum + o.price,
@@ -205,6 +210,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           quantity,
           unitPrice,
           totalPrice: unitPrice * quantity,
+          note,
         },
       });
     },

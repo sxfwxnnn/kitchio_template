@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { LayoutDashboard, ShoppingBag, Settings, LogOut, Utensils } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Settings, LogOut, Utensils, BarChart3, Ticket } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { usePathname } from "next/navigation";
 
@@ -45,10 +45,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <a href="/admin/menu" className={getLinkClass("/admin/menu")}>
               <LayoutDashboard className="h-4 w-4" /> Menu Manager
             </a>
-            <div className="flex items-center justify-between opacity-40 cursor-not-allowed gap-3 px-4 py-2.5 text-zinc-400 text-sm">
-              <span className="flex items-center gap-3"><Settings className="h-4 w-4" /> System Settings</span>
-              <span className="text-[10px] uppercase font-bold tracking-widest bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-500">Soon</span>
-            </div>
+            <a href="/admin/coupons" className={getLinkClass("/admin/coupons")}>
+              <Ticket className="h-4 w-4" /> Coupons & Promos
+            </a>
+            <a href="/admin/analytics" className={getLinkClass("/admin/analytics")}>
+              <BarChart3 className="h-4 w-4" /> Analytics & Reports
+            </a>
+            <a href="/admin/settings" className={getLinkClass("/admin/settings")}>
+              <Settings className="h-4 w-4" /> Restaurant Settings
+            </a>
           </nav>
         </div>
 

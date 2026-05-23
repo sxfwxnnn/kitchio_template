@@ -8,7 +8,7 @@ import { createPaymentIntent } from "@/lib/actions/checkout";
 import { createOrder } from "@/lib/actions/orders";
 import { createClient } from "@/lib/supabase/client";
 import { loadStripe } from "@stripe/stripe-js";
-import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { Elements, CardElement, useStripe, useElements, PaymentRequestButtonElement } from "@stripe/react-stripe-js";
 import {
   ArrowLeft,
   MapPin,
@@ -79,6 +79,8 @@ function CheckoutForm() {
   const [authChecked, setAuthChecked] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [mapsLoaded, setMapsLoaded] = useState(false);
+  // Guard to prevent the empty-cart redirect from firing when we intentionally redirect after checkout
+  const [isRedirectingToOrder, setIsRedirectingToOrder] = useState(false);
 
   // Time preference states
   const [deliveryTimeMode, setDeliveryTimeMode] = useState<"asap" | "schedule">("asap");
@@ -90,21 +92,187 @@ function CheckoutForm() {
   const [promoDiscount, setPromoDiscount] = useState<number>(0);
   const [promoError, setPromoError] = useState("");
 
-  // Use demo restaurant for now
-  const restaurant = demoRestaurant;
+  // Tip states
+  const [tipPercentage, setTipPercentage] = useState<number | null>(null); // null, 10, 15, 20
+  const [customTip, setCustomTip] = useState<string>("");
+  const [tipAmount, setTipAmount] = useState<number>(0);
+
+  // Saved addresses state
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("kitchio-saved-addresses") || "[]");
+      setSavedAddresses(stored);
+    } catch {
+      // Ignore
+    }
+  }, []);
+
+  // Use demo restaurant state with dynamic settings override
+  const [restaurant, setRestaurant] = useState(demoRestaurant);
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("kitchio-override-restaurant");
+      if (stored) {
+        setRestaurant(JSON.parse(stored));
+      }
+    } catch {
+      // Ignore
+    }
+  }, []);
+
+  const [postcodeDeliveryFee, setPostcodeDeliveryFee] = useState<number | null>(null);
+
+  // Update postcode delivery fee dynamically when deliveryAddress changes
+  useEffect(() => {
+    if (orderMode !== "delivery" || !deliveryAddress) {
+      setPostcodeDeliveryFee(null);
+      return;
+    }
+    
+    // Attempt to extract postcode using regex (UK postcode format)
+    const ukPostcodeRegex = /([A-Z][A-HJ-Y]?\d[A-Z\d]? ?\d[A-Z]{2}|GIR ?0A{2})/i;
+    const match = deliveryAddress.match(ukPostcodeRegex);
+    if (match) {
+      const postcode = match[0];
+      try {
+        const { getPostcodeDeliveryFee } = require("@/lib/postcode");
+        const fee = getPostcodeDeliveryFee(postcode);
+        if (fee !== null) {
+          setPostcodeDeliveryFee(fee);
+        }
+      } catch (e) {
+        console.error("Failed to load postcode delivery fee utility:", e);
+      }
+    }
+  }, [deliveryAddress, orderMode]);
 
   const deliveryFee =
     orderMode === "delivery"
       ? subtotal >= restaurant.freeDeliveryOver
         ? 0
-        : restaurant.deliveryFee
+        : (postcodeDeliveryFee !== null ? postcodeDeliveryFee : restaurant.deliveryFee)
       : 0;
 
   // Calculate discounts (Promo only, points system removed)
   const discount = promoDiscount;
 
+  const total = Math.max(0, subtotal + deliveryFee + tipAmount - discount);
 
-  const total = Math.max(0, subtotal + deliveryFee - discount);
+  // Dynamic tip amount sync
+  useEffect(() => {
+    if (tipPercentage !== null) {
+      setTipAmount(Number((subtotal * (tipPercentage / 100)).toFixed(2)));
+      setCustomTip("");
+    } else if (customTip) {
+      const parsed = parseFloat(customTip);
+      setTipAmount(isNaN(parsed) || parsed < 0 ? 0 : Number(parsed.toFixed(2)));
+    } else {
+      setTipAmount(0);
+    }
+  }, [tipPercentage, customTip, subtotal]);
+
+  const [paymentRequest, setPaymentRequest] = useState<any>(null);
+  const [canMakePayment, setCanMakePayment] = useState<boolean>(false);
+
+  // Initialize Stripe Payment Request Button (Apple Pay & Google Pay)
+  useEffect(() => {
+    if (!stripe) return;
+
+    const pr = stripe.paymentRequest({
+      country: "GB",
+      currency: "gbp",
+      total: {
+        label: "Kitchio Order",
+        amount: Math.round(total * 100), // in pence
+      },
+      requestPayerName: true,
+      requestPayerEmail: true,
+      requestPayerPhone: true,
+    });
+
+    pr.canMakePayment().then((result: any) => {
+      if (result) {
+        setPaymentRequest(pr);
+        setCanMakePayment(true);
+      }
+    });
+
+    pr.on("paymentmethod", async (ev: any) => {
+      try {
+        const finalInstructions = [
+          specialInstructions,
+          deliveryTimeMode === "schedule" ? `[Scheduled Delivery Time: ${selectedTimeSlot}]` : null,
+          "[Express Apple/Google Pay]"
+        ].filter(Boolean).join(" ");
+
+        // 1. Create the order in Supabase
+        const { order, error: orderError } = await createOrder({
+          restaurantId: restaurant.id,
+          items,
+          subtotal,
+          deliveryFee,
+          tip: tipAmount,
+          total,
+          deliveryMode: orderMode,
+          customerName: ev.payerName || customerName || "Express Guest",
+          customerPhone: ev.payerPhone || customerPhone || "0000000000",
+          deliveryAddress: orderMode === "delivery" ? (ev.shippingAddress?.addressLine?.join(", ") || deliveryAddress || "Express Shipping Address") : null,
+          specialInstructions: finalInstructions,
+          stripePaymentIntent: ev.paymentMethod.id,
+        });
+
+        if (orderError || !order) {
+          ev.complete("fail");
+          setError(orderError || "Failed to create express order");
+          return;
+        }
+
+        // 2. Initialize the backend payment intent
+        const { clientSecret, error: intentError } = await createPaymentIntent({
+          orderId: order.id,
+          total,
+          stripeAccountId: restaurant.stripeAccountId,
+        });
+
+        if (intentError || !clientSecret) {
+          ev.complete("fail");
+          setError(intentError || "Failed to initialize payment");
+          return;
+        }
+
+        // 3. Confirm payment intent with payment method ID
+        const { paymentIntent, error: confirmError } = await stripe.confirmCardPayment(
+          clientSecret,
+          { payment_method: ev.paymentMethod.id },
+          { handleActions: false }
+        );
+
+        if (confirmError) {
+          ev.complete("fail");
+          setError(confirmError.message || "Payment declined");
+          return;
+        }
+
+        ev.complete("success");
+
+        // Finalize order status on the server
+        try {
+          const { finalizeStripeOrderPayment } = await import("@/lib/actions/orders");
+          await finalizeStripeOrderPayment(order.id, paymentIntent.id);
+        } catch (finalizeErr) {
+          console.error("Failed to finalize order payment status on server:", finalizeErr);
+        }
+
+        setIsRedirectingToOrder(true);
+        clearCart();
+        window.location.href = `/orders/${order.id}`;
+      } catch (err) {
+        ev.complete("fail");
+        setError(err instanceof Error ? err.message : "Express payment failed");
+      }
+    });
+  }, [stripe, total, items, subtotal, deliveryFee, tipAmount, orderMode, deliveryAddress, specialInstructions, deliveryTimeMode, selectedTimeSlot]);
 
   const minimumMet =
     subtotal >= restaurant.minimumOrder || orderMode === "collection";
@@ -197,9 +365,9 @@ function CheckoutForm() {
     };
   }, []);
 
-  // Initialize Autocomplete once script is loaded, user is logged in, and delivery input is visible
+  // Initialize Autocomplete once script is loaded, and delivery input is visible
   useEffect(() => {
-    if (!mapsLoaded || !isLoggedIn || orderMode !== "delivery") return;
+    if (!mapsLoaded || orderMode !== "delivery") return;
 
     // Small delay to ensure the address-input element is fully painted/rendered in the DOM
     const timer = setTimeout(() => {
@@ -208,7 +376,8 @@ function CheckoutForm() {
 
       const autocomplete = new (window as any).google.maps.places.Autocomplete(input, {
         componentRestrictions: { country: "gb" },
-        fields: ["formatted_address"],
+        // Request address_components so we can extract the postcode
+        fields: ["formatted_address", "address_components", "place_id"],
       });
 
       // Prevent checkout form submission if user presses Enter within the address search field
@@ -221,11 +390,34 @@ function CheckoutForm() {
 
       const listener = autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
-        if (place.formatted_address) {
-          setDeliveryAddress(place.formatted_address);
-          if (place.place_id) {
-            localStorage.setItem("kitchio-place-id", place.place_id);
+        if (!place.formatted_address) return;
+
+        // Extract postcode from address components
+        let postcode = "";
+        if (place.address_components) {
+          const pcComponent = (place.address_components as any[]).find(
+            (c: any) => c.types.includes("postal_code")
+          );
+          if (pcComponent) postcode = pcComponent.long_name;
+        }
+
+        // Validate postcode is within the delivery boundary
+        if (postcode) {
+          const { isPostcodeInDeliveryRange } = require("@/lib/postcode");
+          if (!isPostcodeInDeliveryRange(postcode)) {
+            // Out of range — clear the field and warn the customer
+            setDeliveryAddress("");
+            input.value = "";
+            toast.error(`Sorry, we don't deliver to ${postcode}. We currently deliver to East London only.`, {
+              duration: 5000,
+            });
+            return;
           }
+        }
+
+        setDeliveryAddress(place.formatted_address);
+        if (place.place_id) {
+          localStorage.setItem("kitchio-place-id", place.place_id);
         }
       });
 
@@ -239,14 +431,15 @@ function CheckoutForm() {
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [mapsLoaded, isLoggedIn, orderMode]);
+  }, [mapsLoaded, orderMode]);
 
-  // Redirect if cart empty
+
+  // Redirect if cart empty (skip if we are intentionally redirecting to order tracking)
   useEffect(() => {
-    if (items.length === 0 && authChecked) {
+    if (items.length === 0 && authChecked && !isRedirectingToOrder) {
       router.push("/");
     }
-  }, [items.length, authChecked, router]);
+  }, [items.length, authChecked, router, isRedirectingToOrder]);
 
   const handleApplyPromo = async () => {
     setPromoError("");
@@ -308,9 +501,13 @@ function CheckoutForm() {
   };
 
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (isExpress: boolean = false) => {
     if (!customerName.trim() || !customerPhone.trim()) {
       setError("Please fill in your name and phone number");
+      return;
+    }
+    if (!customerEmail.trim() || !customerEmail.includes("@")) {
+      setError("Please enter a valid email address");
       return;
     }
     if (orderMode === "delivery" && !deliveryAddress.trim()) {
@@ -321,7 +518,7 @@ function CheckoutForm() {
       setError(`Minimum order of £${restaurant.minimumOrder.toFixed(2)} not met`);
       return;
     }
-    if (!stripe || !elements) {
+    if (!isExpress && (!stripe || !elements)) {
       setError("Payment client is still loading. Please try again.");
       return;
     }
@@ -342,18 +539,26 @@ function CheckoutForm() {
         items,
         subtotal,
         deliveryFee,
+        tip: tipAmount,
         total,
         deliveryMode: orderMode,
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
         deliveryAddress: orderMode === "delivery" ? deliveryAddress.trim() : null,
         specialInstructions: finalInstructions,
-        stripePaymentIntent: null,
+        stripePaymentIntent: isExpress ? `mock_express_${Date.now()}` : null,
       });
 
       if (orderError || !order) {
         setError(orderError || "Failed to create order");
         setLoading(false);
+        return;
+      }
+
+      if (isExpress) {
+        setIsRedirectingToOrder(true);
+        clearCart();
+        window.location.href = `/orders/${order.id}`;
         return;
       }
 
@@ -371,6 +576,11 @@ function CheckoutForm() {
       }
 
       // 3. Confirm card payment client-side
+      if (!stripe || !elements) {
+        setError("Payment client is still loading. Please try again.");
+        setLoading(false);
+        return;
+      }
       const cardElement = elements.getElement(CardElement);
       if (!cardElement) {
         setError("Payment fields are not ready.");
@@ -389,6 +599,7 @@ function CheckoutForm() {
               email: customerEmail.trim() || undefined,
             },
           },
+          return_url: `${window.location.origin}/checkout/success?order_id=${order.id}`,
         }
       );
 
@@ -399,8 +610,16 @@ function CheckoutForm() {
       }
 
       if (paymentIntent && paymentIntent.status === "succeeded") {
+        // Finalize order status on the server
+        try {
+          const { finalizeStripeOrderPayment } = await import("@/lib/actions/orders");
+          await finalizeStripeOrderPayment(order.id, paymentIntent.id);
+        } catch (finalizeErr) {
+          console.error("Failed to finalize order payment status on server:", finalizeErr);
+        }
+        setIsRedirectingToOrder(true);
         clearCart();
-        router.push(`/checkout/success?order_id=${order.id}`);
+        window.location.href = `/orders/${order.id}`;
       } else {
         setError("Payment authentication failed. Status: " + paymentIntent?.status);
         setLoading(false);
@@ -419,47 +638,19 @@ function CheckoutForm() {
     );
   }
 
-  if (!isLoggedIn) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-        <div className="w-full max-w-sm text-center">
-          <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
-            <ShoppingBag className="h-6 w-6 text-gray-600" />
-          </div>
-          <h1 className="text-xl font-bold text-gray-900">Sign in to checkout</h1>
-          <p className="mt-2 text-sm text-gray-500">
-            You need an account to place an order
-          </p>
-          <Link
-            href="/login"
-            className="mt-6 inline-flex items-center justify-center rounded-xl bg-gray-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 transition-colors"
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/"
-            className="mt-3 block text-sm text-gray-500 hover:text-gray-700"
-          >
-            Back to menu
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-[#1f2937]">
+    <div className="min-h-screen bg-brand-bg text-brand-text">
       {/* Premium Header */}
-      <div className="border-b border-gray-100 bg-white px-4 py-4.5">
+      <div className="border-b border-brand-border bg-brand-card px-4 py-4.5">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <Link
             href="/"
-            className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-900 transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-brand-text-muted hover:text-brand-text transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to menu
           </Link>
-          <h1 className="font-serif text-2xl font-bold text-gray-900 leading-none tracking-tight">
+          <h1 className="font-serif text-2xl font-bold text-brand-text leading-none tracking-tight">
             Secure Checkout
           </h1>
           <div className="w-20 lg:block hidden"></div>
@@ -474,52 +665,74 @@ function CheckoutForm() {
           <div className="lg:col-span-2 space-y-6">
             
             {/* 1. Customer Details (Compact, minimal visual layout with zero harsh borders) */}
-            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+            <div className="rounded-2xl border border-brand-border bg-brand-card p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
               <div className="mb-4">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400">Customer Details</h2>
-                <p className="text-[11px] text-gray-400 mt-1">
-                  Hi {customerName.split(" ")[0] || "there"}, we&apos;ve prefilled your details for a faster checkout experience.
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-brand-text-muted">Customer Details</h2>
+                  {!isLoggedIn && (
+                    <Link
+                      href="/login"
+                      className="text-xs font-bold text-[#0F8A5F] hover:underline"
+                    >
+                      Already have an account? Sign in
+                    </Link>
+                  )}
+                </div>
+                <p className="text-[11px] text-brand-text-muted mt-1">
+                  {isLoggedIn
+                    ? `Hi ${customerName.split(" ")[0] || "there"}, we've prefilled your details for a faster checkout experience.`
+                    : "Checking out as a guest. Enter your details below."}
                 </p>
               </div>
               <div className="space-y-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-wide text-gray-400">Name *</label>
+                  <label className="text-[10px] font-bold uppercase tracking-wide text-brand-text-muted">Name *</label>
                   <div className="relative">
-                    <UserIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    <UserIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-text-muted pointer-events-none" />
                     <input
                       type="text"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                       placeholder="Safwan Salehin"
-                      className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-4 text-sm text-gray-900 focus:border-[#0F8A5F] focus:ring-1 focus:ring-[#0F8A5F] focus:outline-none transition-colors"
+                      className="w-full rounded-xl border border-brand-border bg-brand-bg py-2.5 pl-9 pr-4 text-sm text-brand-text focus:border-[#0F8A5F] focus:ring-1 focus:ring-[#0F8A5F] focus:outline-none transition-colors"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wide text-gray-400">Email *</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wide text-brand-text-muted">Email *</label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                      {isLoggedIn ? (
+                        <Lock className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-brand-text-muted pointer-events-none" />
+                      ) : (
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-text-muted pointer-events-none text-xs font-bold font-sans">@</span>
+                      )}
                       <input
                         type="email"
                         value={customerEmail}
-                        disabled
-                        className="w-full rounded-xl border border-gray-150 bg-gray-50/50 py-2.5 pl-9 pr-4 text-sm text-gray-400 cursor-not-allowed"
+                        onChange={(e) => setCustomerEmail(e.target.value)}
+                        disabled={isLoggedIn}
+                        placeholder="you@example.com"
+                        className={`w-full rounded-xl border py-2.5 pl-9 pr-4 text-sm focus:outline-none transition-colors ${
+                          isLoggedIn
+                            ? "border-brand-border bg-brand-bg/50 text-brand-text-muted cursor-not-allowed"
+                            : "border-brand-border bg-brand-bg text-brand-text focus:border-[#0F8A5F] focus:ring-1 focus:ring-[#0F8A5F]"
+                        }`}
                       />
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wide text-gray-400">Phone *</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wide text-brand-text-muted">Phone *</label>
                     <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                      <Phone className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-brand-text-muted pointer-events-none" />
                       <input
                         type="tel"
                         value={customerPhone}
                         onChange={(e) => setCustomerPhone(e.target.value)}
                         placeholder="07123 456789"
-                        className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-4 text-sm text-gray-900 focus:border-[#0F8A5F] focus:ring-1 focus:ring-[#0F8A5F] focus:outline-none transition-colors"
+                        className="w-full rounded-xl border border-brand-border bg-brand-bg py-2.5 pl-9 pr-4 text-sm text-brand-text focus:border-[#0F8A5F] focus:ring-1 focus:ring-[#0F8A5F] focus:outline-none transition-colors"
                       />
                     </div>
                   </div>
@@ -544,6 +757,37 @@ function CheckoutForm() {
                       autoComplete="one-time-code"
                     />
                   </div>
+
+                  {/* Saved Locations Bento Quick Selector */}
+                  {savedAddresses.length > 0 && (
+                    <div className="pt-1">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">
+                        Quick Select Saved Location:
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {savedAddresses.map((addr) => {
+                          const active = deliveryAddress === addr.address;
+                          return (
+                            <button
+                              key={addr.id}
+                              type="button"
+                              onClick={() => {
+                                setDeliveryAddress(addr.address);
+                                toast.success(`Selected saved location "${addr.name}"`);
+                              }}
+                              className={`py-1.5 px-3 text-xs font-semibold rounded-lg border text-center transition-all duration-100 cursor-pointer ${
+                                active
+                                  ? "bg-[#0F8A5F] border-[#0F8A5F] text-white font-bold"
+                                  : "bg-[#FAFAFA] border-gray-250 text-gray-700 hover:border-gray-350"
+                              }`}
+                            >
+                              {addr.name === "Home" ? "🏠" : addr.name === "Work" ? "💼" : "📍"} {addr.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   {deliveryAddress ? (
                     <div className="flex items-center justify-between border-t border-gray-100 pt-3.5">
@@ -624,55 +868,182 @@ function CheckoutForm() {
               </div>
             </div>
 
+            {/* Tipping Section */}
+            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400">Support the Kitchen Team</h2>
+                <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[9px] font-bold text-amber-700">
+                  Optional
+                </span>
+              </div>
+              <p className="text-[11px] text-gray-500 mb-4 leading-normal">
+                100% of tips are distributed directly among our chefs and delivery partners.
+              </p>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-4 gap-2.5">
+                  {[10, 15, 20].map((percent) => {
+                    const active = tipPercentage === percent;
+                    return (
+                      <button
+                        key={percent}
+                        type="button"
+                        onClick={() => {
+                          setTipPercentage(active ? null : percent);
+                        }}
+                        className={`flex flex-col items-center justify-center rounded-xl border py-2.5 transition-all duration-150 ${
+                          active
+                            ? "border-[#0F8A5F] bg-[#0F8A5F]/5 ring-1 ring-[#0F8A5F] font-bold"
+                            : "border-gray-200 hover:border-gray-300 bg-white"
+                        }`}
+                      >
+                        <span className="text-xs text-gray-950">{percent}%</span>
+                        <span className="text-[9px] text-gray-400 mt-0.5 font-semibold">
+                          +£{(subtotal * (percent / 100)).toFixed(2)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                  
+                  {/* Custom tip option card trigger */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTipPercentage(null);
+                      setCustomTip(customTip ? "" : "5.00");
+                    }}
+                    className={`flex flex-col items-center justify-center rounded-xl border py-2.5 transition-all duration-150 ${
+                      tipPercentage === null && customTip
+                        ? "border-[#0F8A5F] bg-[#0F8A5F]/5 ring-1 ring-[#0F8A5F] font-bold"
+                        : "border-gray-200 hover:border-gray-300 bg-white"
+                    }`}
+                  >
+                    <span className="text-xs text-gray-950">Custom</span>
+                    <span className="text-[9px] text-gray-400 mt-0.5 font-semibold">
+                      {customTip ? `£${parseFloat(customTip || "0").toFixed(2)}` : "Enter amount"}
+                    </span>
+                  </button>
+                </div>
+
+                {/* Custom tip input field */}
+                {tipPercentage === null && customTip !== "" && (
+                  <div className="pt-3.5 border-t border-gray-150 animate-fade-in">
+                    <div className="relative max-w-xs">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold font-sans">£</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={customTip}
+                        onChange={(e) => setCustomTip(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full rounded-xl border border-gray-200 py-2 pl-7 pr-4 text-xs text-gray-955 focus:border-[#0F8A5F] focus:ring-1 focus:ring-[#0F8A5F] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* 4. Payment Method */}
             <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
               <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-4">Payment Method</h2>
               
               {/* Express Checkout Options */}
               <div className="mb-5 space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Apple Pay Express */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      toast.success("Apple Pay initialized!", {
-                        description: "Processing express checkout...",
-                      });
-                      setTimeout(() => {
-                        handleCheckout();
-                      }, 1500);
-                    }}
-                    className="flex h-11 w-full items-center justify-center rounded-xl bg-black text-white hover:bg-zinc-900 active:scale-95 transition-all duration-150 shadow-sm cursor-pointer"
-                  >
-                    <svg className="h-5 w-auto" viewBox="0 0 24 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12.4 8.5C12.4 7.2 13.4 6.6 13.5 6.5C12.9 5.6 11.9 5.5 11.6 5.5C10.7 5.4 9.9 6.0 9.4 6.0C8.9 6.0 8.3 5.5 7.6 5.5C6.6 5.5 5.7 6.1 5.2 7.0C4.2 8.8 4.9 11.4 5.9 12.8C6.4 13.5 6.9 14.2 7.6 14.2C8.3 14.1 8.6 13.7 9.5 13.7C10.3 13.7 10.6 14.2 11.3 14.1C12.0 14.1 12.5 13.5 13.0 12.8C13.5 12.0 13.7 11.3 13.8 11.2C13.7 11.2 12.4 10.7 12.4 8.5Z" fill="white"/>
-                      <path d="M11.9 4.2C12.3 3.7 12.6 3.0 12.5 2.3C11.9 2.3 11.1 2.7 10.7 3.2C10.3 3.6 10.0 4.3 10.1 5.0C10.8 5.1 11.5 4.6 11.9 4.2Z" fill="white"/>
-                    </svg>
-                    <span className="font-semibold text-xs ml-1">Pay</span>
-                  </button>
-
-                  {/* Google Pay Express */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      toast.success("Google Pay initialized!", {
-                        description: "Processing express checkout...",
-                      });
-                      setTimeout(() => {
-                        handleCheckout();
-                      }, 1500);
-                    }}
-                    className="flex h-11 w-full items-center justify-center rounded-xl bg-white text-zinc-950 border border-zinc-200 hover:bg-zinc-50 active:scale-95 transition-all duration-150 shadow-sm font-semibold text-xs cursor-pointer"
-                  >
-                    <svg className="h-4 w-auto mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22c-.23-.66-.35-1.36-.35-2.09z" fill="#FBBC05"/>
-                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
-                    </svg>
-                    <span>Pay</span>
-                  </button>
-                </div>
+                {canMakePayment && paymentRequest ? (
+                  <div className="bg-white p-3.5 rounded-xl border border-zinc-200 shadow-[0_2px_8px_rgba(0,0,0,0.01)] transition-all">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-2">
+                      Express Checkout via Wallet
+                    </p>
+                    <PaymentRequestButtonElement options={{ paymentRequest }} />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Apple Pay Express */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!customerName.trim() || !customerPhone.trim()) {
+                          setError("Please fill in your name and phone number");
+                          toast.error("Please fill in your name and phone number");
+                          return;
+                        }
+                        if (!customerEmail.trim() || !customerEmail.includes("@")) {
+                          setError("Please enter a valid email address");
+                          toast.error("Please enter a valid email address");
+                          return;
+                        }
+                        if (orderMode === "delivery" && !deliveryAddress.trim()) {
+                          setError("Please search and select your delivery address");
+                          toast.error("Please search and select your delivery address");
+                          return;
+                        }
+                        if (!minimumMet) {
+                          setError(`Minimum order of £${restaurant.minimumOrder.toFixed(2)} not met`);
+                          toast.error(`Minimum order of £${restaurant.minimumOrder.toFixed(2)} not met`);
+                          return;
+                        }
+                        toast.success("Apple Pay initialized!", {
+                          description: "Processing express checkout...",
+                        });
+                        setTimeout(() => {
+                          handleCheckout(true);
+                        }, 1500);
+                      }}
+                      className="flex h-11 w-full items-center justify-center rounded-xl bg-black text-white hover:bg-zinc-900 active:scale-95 transition-all duration-150 shadow-sm cursor-pointer"
+                    >
+                      <svg className="h-5 w-auto" viewBox="0 0 24 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12.4 8.5C12.4 7.2 13.4 6.6 13.5 6.5C12.9 5.6 11.9 5.5 11.6 5.5C10.7 5.4 9.9 6.0 9.4 6.0C8.9 6.0 8.3 5.5 7.6 5.5C6.6 5.5 5.7 6.1 5.2 7.0C4.2 8.8 4.9 11.4 5.9 12.8C6.4 13.5 6.9 14.2 7.6 14.2C8.3 14.1 8.6 13.7 9.5 13.7C10.3 13.7 10.6 14.2 11.3 14.1C12.0 14.1 12.5 13.5 13.0 12.8C13.5 12.0 13.7 11.3 13.8 11.2C13.7 11.2 12.4 10.7 12.4 8.5Z" fill="white"/>
+                        <path d="M11.9 4.2C12.3 3.7 12.6 3.0 12.5 2.3C11.9 2.3 11.1 2.7 10.7 3.2C10.3 3.6 10.0 4.3 10.1 5.0C10.8 5.1 11.5 4.6 11.9 4.2Z" fill="white"/>
+                      </svg>
+                      <span className="font-semibold text-xs ml-1">Pay</span>
+                    </button>
+ 
+                    {/* Google Pay Express */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!customerName.trim() || !customerPhone.trim()) {
+                          setError("Please fill in your name and phone number");
+                          toast.error("Please fill in your name and phone number");
+                          return;
+                        }
+                        if (!customerEmail.trim() || !customerEmail.includes("@")) {
+                          setError("Please enter a valid email address");
+                          toast.error("Please enter a valid email address");
+                          return;
+                        }
+                        if (orderMode === "delivery" && !deliveryAddress.trim()) {
+                          setError("Please search and select your delivery address");
+                          toast.error("Please search and select your delivery address");
+                          return;
+                        }
+                        if (!minimumMet) {
+                          setError(`Minimum order of £${restaurant.minimumOrder.toFixed(2)} not met`);
+                          toast.error(`Minimum order of £${restaurant.minimumOrder.toFixed(2)} not met`);
+                          return;
+                        }
+                        toast.success("Google Pay initialized!", {
+                          description: "Processing express checkout...",
+                        });
+                        setTimeout(() => {
+                          handleCheckout(true);
+                        }, 1500);
+                      }}
+                      className="flex h-11 w-full items-center justify-center rounded-xl bg-white text-zinc-950 border border-zinc-200 hover:bg-zinc-50 active:scale-95 transition-all duration-150 shadow-sm font-semibold text-xs cursor-pointer"
+                    >
+                      <svg className="h-4 w-auto mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22c-.23-.66-.35-1.36-.35-2.09z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+                      </svg>
+                      <span>Pay</span>
+                    </button>
+                  </div>
+                )}
+ 
                 <div className="flex items-center my-3">
                   <div className="flex-grow border-t border-zinc-100"></div>
                   <span className="mx-2.5 text-[9px] font-bold uppercase tracking-wider text-zinc-400">Or Pay with Card</span>
@@ -720,7 +1091,7 @@ function CheckoutForm() {
 
                 {/* Continue button at bottom of the column */}
                 <button
-                  onClick={handleCheckout}
+                  onClick={() => handleCheckout(false)}
                   disabled={loading || !minimumMet || !stripe || !elements || (orderMode === "delivery" && !deliveryAddress)}
                   className="flex w-full items-center justify-between rounded-xl bg-[#0F8A5F] px-6 py-3.5 text-sm font-bold text-white transition-all hover:bg-[#0D7A54] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm cursor-pointer"
                 >
@@ -813,6 +1184,14 @@ function CheckoutForm() {
                         `£${deliveryFee.toFixed(2)}`
                       )}
                     </span>
+                  </div>
+                )}
+
+                {/* Driver Tip */}
+                {tipAmount > 0 && (
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>Driver Tip</span>
+                    <span className="text-gray-950 font-bold font-serif">£{tipAmount.toFixed(2)}</span>
                   </div>
                 )}
 

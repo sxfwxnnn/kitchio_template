@@ -1,7 +1,33 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-bg: var(--brand-bg);
+  --color-brand-card: var(--brand-card);
+  --color-brand-text: var(--brand-text);
+  --color-brand-text-muted: var(--brand-text-muted);
+  --color-brand-border: var(--brand-border);
+}
+
 :root {
-  --color-primary: #09090b;
+  --brand-primary: #18181B;            /* Crisp Black/Zinc-900 */
+  --brand-accent: #16a34a;             /* Accent Green for successful promo checks / price discount */
+  --brand-bg: #F8F9FA;                 /* Crisp Off-White */
+  --brand-card: #FFFFFF;               /* Pure White */
+  --brand-text: #18181B;               /* Black Text */
+  --brand-text-muted: #52525B;         /* Zinc-600 */
+  --brand-border: rgba(0, 0, 0, 0.08); /* Soft grey border */
+}
+
+.dark {
+  --brand-primary: #FFFFFF;            /* White */
+  --brand-accent: #16a34a;             /* Accent Green */
+  --brand-bg: #0A0A0A;                 /* Deep Black */
+  --brand-card: #18181B;               /* Dark Bento Card Charcoal */
+  --brand-text: #FFFFFF;               /* White Text */
+  --brand-text-muted: #A1A1AA;         /* Zinc-400 */
+  --brand-border: rgba(255, 255, 255, 0.1); /* Soft White Border */
 }
 
 html {
@@ -10,7 +36,7 @@ html {
 }
 
 body {
-  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI",
+  font-family: var(--font-plus-jakarta), -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -90,5 +116,5 @@ body {
 }
 
 .animate-flash-dot {
-  animation: flash-dot 0.5s ease-in-out 3;
+  animation: flash-dot 1.2s ease-in-out infinite;
 }
