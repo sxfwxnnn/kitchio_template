@@ -21,16 +21,6 @@ export async function updateOrderStatus(orderId: string, status: string) {
     throw new Error(`KDS pipeline commit failure: ${error.message}`);
   }
 
-  // Trigger Discord webhook when order is accepted
-  if (status === "accepted") {
-    try {
-      const { sendOrderDiscordWebhook } = await import("@/lib/discord");
-      await sendOrderDiscordWebhook(orderId);
-    } catch (discordErr) {
-      console.error("Failed to trigger Discord webhook in KDS update:", discordErr);
-    }
-  }
-
   // Trigger SMS Status Notification (Twilio or simulated)
   try {
     const { sendOrderStatusSMS } = await import("@/lib/sms");

@@ -115,17 +115,6 @@ export async function createOrder(params: {
       return { order: null, error: itemsError.message };
     }
 
-    // Trigger Discord Webhook on the server for mock express checkouts
-    if (params.stripePaymentIntent?.startsWith("mock_express_")) {
-      try {
-        const { sendOrderDiscordWebhook } = await import("@/lib/discord");
-        // Trigger it asynchronously so we don't delay order creation response
-        void sendOrderDiscordWebhook(order.id);
-      } catch (discordErr) {
-        console.error("Failed to trigger Discord webhook in createOrder server action:", discordErr);
-      }
-    }
-
     return { order: order as Order, error: null };
   } catch (err) {
     return {
@@ -160,14 +149,6 @@ export async function finalizeStripeOrderPayment(
 
     if (error || !order) {
       return { success: false, error: error?.message || "Order not found" };
-    }
-
-    // Trigger Discord Webhook on the server
-    try {
-      const { sendOrderDiscordWebhook } = await import("@/lib/discord");
-      void sendOrderDiscordWebhook(orderId);
-    } catch (discordErr) {
-      console.error("Failed to trigger Discord webhook in finalizeStripeOrderPayment:", discordErr);
     }
 
     return { success: true, error: null };
