@@ -15,6 +15,7 @@ import Cart from "@/components/Cart";
 import { useCart } from "@/context/CartContext";
 import { createClient } from "@/lib/supabase/client";
 import { Search, X } from "lucide-react";
+import AddressModal from "@/components/AddressModal";
 
 // Transform raw Supabase menu_items rows into our typed MenuCategory[] structure
 function buildMenuCategories(
@@ -129,6 +130,10 @@ export default function MenuPage() {
   const [selectedDietary, setSelectedDietary] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // Address modal eligibility state
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [verifiedAddress, setVerifiedAddress] = useState<string | null>(null);
 
   // ── Live data fetch from Supabase ────────────────────────────────────────
   useEffect(() => {
@@ -295,7 +300,30 @@ export default function MenuPage() {
       .filter((cat) => cat.items.length > 0);
   }, [menuCategories, selectedDietary, searchQuery]);
 
-  const { totalItems, subtotal, setIsCartOpen, orderMode } = useCart();
+  const { totalItems, subtotal, setIsCartOpen, orderMode, setOrderMode } = useCart();
+
+  // Address verification enforcement for delivery mode
+  useEffect(() => {
+    const addr = localStorage.getItem("kitchio-address");
+    if (addr && addr !== "collection") {
+      setVerifiedAddress(addr);
+      setShowAddressModal(false);
+    } else if (orderMode === "delivery") {
+      setShowAddressModal(true);
+    } else {
+      setShowAddressModal(false);
+    }
+  }, [orderMode]);
+
+  const handleAddressValid = useCallback((address: string) => {
+    if (address === "collection") {
+      setOrderMode("collection");
+      setVerifiedAddress(null);
+    } else {
+      setVerifiedAddress(address);
+    }
+    setShowAddressModal(false);
+  }, [setOrderMode]);
 
   const deliveryFee =
     orderMode === "delivery"
@@ -538,6 +566,11 @@ export default function MenuPage() {
             Filters are automatically applied as you type! Tap the close button to view results.
           </p>
         </div>
+      )}
+
+      {/* Address Verification Modal */}
+      {showAddressModal && (
+        <AddressModal onValid={handleAddressValid} />
       )}
     </div>
   );

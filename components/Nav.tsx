@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Restaurant, MenuCategory, MenuItem } from "@/types";
 import { useCart } from "@/context/CartContext";
-import { Search, X, ShoppingBag, Sun, Moon } from "lucide-react";
+import { Search, X, ShoppingBag } from "lucide-react";
 import AuthButton from "@/components/AuthButton";
 import { tenantConfig } from "@/config/tenant";
 
@@ -19,7 +19,6 @@ export default function Nav({ restaurant, menuCategories }: NavProps) {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState(-1);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -29,23 +28,7 @@ export default function Nav({ restaurant, menuCategories }: NavProps) {
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
-  // Initialize theme state on mount
-  useEffect(() => {
-    const isDark = document.documentElement.classList.contains("dark");
-    setTheme(isDark ? "dark" : "light");
-  }, []);
 
-  const toggleTheme = () => {
-    const nextTheme = theme === "light" ? "dark" : "light";
-    setTheme(nextTheme);
-    if (nextTheme === "dark") {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("kitchio-theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("kitchio-theme", "light");
-    }
-  };
 
   // Close search dropdown on outside click
   useEffect(() => {
@@ -217,21 +200,8 @@ export default function Nav({ restaurant, menuCategories }: NavProps) {
           )}
         </div>
 
-        {/* Right: Theme Toggle + Auth + Cart */}
+        {/* Right: Auth + Cart */}
         <div className="flex items-center gap-2">
-          {/* Sun/Moon Toggle */}
-          <button
-            onClick={toggleTheme}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-brand-border bg-brand-card text-brand-text hover:bg-brand-bg transition-all cursor-pointer"
-            title="Toggle theme"
-          >
-            {theme === "light" ? (
-              <Moon className="h-4 w-4" />
-            ) : (
-              <Sun className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-            )}
-          </button>
-
           <AuthButton />
 
           <button
