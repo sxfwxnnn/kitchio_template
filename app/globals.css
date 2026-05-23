@@ -118,3 +118,8 @@ body {
 .animate-flash-dot {
   animation: flash-dot 1.2s ease-in-out infinite;
 }
+
+/* Force all font-serif references to use Plus Jakarta Sans to keep text clean and modern */
+.font-serif {
+  font-family: var(--font-plus-jakarta), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
