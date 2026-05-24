@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { LayoutDashboard, ShoppingBag, Settings, LogOut, Utensils, BarChart3, Ticket } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Settings, LogOut, Utensils, BarChart3, Ticket, CreditCard } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { usePathname } from "next/navigation";
 
@@ -39,7 +39,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
           
           <nav className="mt-8 space-y-1.5">
-            <a href="/admin" className={getLinkClass("/admin")}>
+            <a href="/admin/dashboard" className={getLinkClass("/admin/dashboard")}>
               <ShoppingBag className="h-4 w-4" /> Live Orders
             </a>
             <a href="/admin/menu" className={getLinkClass("/admin/menu")}>
@@ -53,6 +53,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </a>
             <a href="/admin/settings" className={getLinkClass("/admin/settings")}>
               <Settings className="h-4 w-4" /> Restaurant Settings
+            </a>
+            <a href="/admin/connect" className={getLinkClass("/admin/connect")}>
+              <CreditCard className="h-4 w-4" /> Stripe Connect
             </a>
           </nav>
         </div>

@@ -33,6 +33,8 @@ export interface MenuItem {
   calories: number;
   extras: Extra[];
   optionGroups?: OptionGroup[];
+  upsellPriority?: number;
+  dietary?: string[];
 }
 
 export interface MenuCategory {
@@ -59,6 +61,11 @@ export interface Restaurant {
   isOpen: boolean;
   closesAt: string;
   stripeAccountId: string | null;
+  maxDeliveryRadiusMiles?: number;
+  restaurantLat?: number;
+  restaurantLng?: number;
+  publicHolidays?: string[];
+  lastOrderBeforeCloseMins?: number;
 }
 
 // ============================================

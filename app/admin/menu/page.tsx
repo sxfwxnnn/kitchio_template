@@ -92,8 +92,26 @@ export default function MenuManagerPage() {
 
       if (itemError) throw itemError;
 
+      const { data: overrideData } = await supabase
+        .from("menu_item_overrides")
+        .select("*")
+        .eq("restaurant_slug", "marios-pizza");
+
+      const mergedItems = (itemData || []).map(item => {
+        const o = overrideData?.find(x => x.item_id === item.id);
+        if (o) {
+          return {
+            ...item,
+            available: o.available !== null ? o.available : item.available,
+            popular: o.is_popular !== null ? o.is_popular : item.popular,
+            price: o.price_override !== null ? Number(o.price_override) : item.price,
+          };
+        }
+        return item;
+      });
+
       setCategories(catData || []);
-      setMenuItems(itemData || []);
+      setMenuItems(mergedItems);
 
       if (catData && catData.length > 0) {
         // Retain selection if valid, else fallback to first category
@@ -251,7 +269,17 @@ export default function MenuManagerPage() {
       setMenuItems(prev => 
         prev.map(i => i.id === itemId ? { ...i, available: nextVal } : i)
       );
-      await toggleMenuItemAvailability(itemId, nextVal);
+
+      const { error } = await supabase
+        .from("menu_item_overrides")
+        .upsert({
+          restaurant_slug: "marios-pizza",
+          item_id: itemId,
+          available: nextVal,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "restaurant_slug,item_id" });
+
+      if (error) throw error;
       toast.success(nextVal ? "Product marked available" : "Product marked out of stock");
     } catch (err: any) {
       toast.error("Failed to toggle availability");
@@ -261,6 +289,32 @@ export default function MenuManagerPage() {
       );
     } finally {
       setUpdatingItemId(null);
+    }
+  };
+
+  const handleTogglePopular = async (itemId: string, currentVal: boolean) => {
+    const nextVal = !currentVal;
+    try {
+      setMenuItems(prev =>
+        prev.map(i => i.id === itemId ? { ...i, popular: nextVal } : i)
+      );
+
+      const { error } = await supabase
+        .from("menu_item_overrides")
+        .upsert({
+          restaurant_slug: "marios-pizza",
+          item_id: itemId,
+          is_popular: nextVal,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "restaurant_slug,item_id" });
+
+      if (error) throw error;
+      toast.success(nextVal ? "Product marked as Popular" : "Product unmarked from Popular");
+    } catch (err: any) {
+      toast.error("Failed to toggle popularity: " + err.message);
+      setMenuItems(prev =>
+        prev.map(i => i.id === itemId ? { ...i, popular: currentVal } : i)
+      );
     }
   };
 
@@ -289,7 +343,18 @@ export default function MenuManagerPage() {
     setUpdatingItemId(itemId);
     try {
       const priceNum = Number(val);
-      await updateMenuItemPrice(itemId, priceNum);
+      
+      const { error } = await supabase
+        .from("menu_item_overrides")
+        .upsert({
+          restaurant_slug: "marios-pizza",
+          item_id: itemId,
+          price_override: priceNum,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "restaurant_slug,item_id" });
+
+      if (error) throw error;
+
       setMenuItems(prev => 
         prev.map(i => i.id === itemId ? { ...i, price: priceNum } : i)
       );
@@ -721,12 +786,18 @@ export default function MenuManagerPage() {
 
                             {/* Popularity indicator tags */}
                             <td className="py-3.5 px-3">
-                              {item.popular && (
-                                <span className="inline-flex items-center gap-1 text-[9px] font-bold font-mono tracking-wide uppercase px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                                  <Flame className="h-2.5 w-2.5 text-amber-400 fill-amber-400/20" />
-                                  Popular
-                                </span>
-                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleTogglePopular(item.id, item.popular)}
+                                className={`inline-flex items-center gap-1 text-[9px] font-bold font-mono tracking-wide uppercase px-2 py-0.5 rounded-full border cursor-pointer transition-colors ${
+                                  item.popular
+                                    ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                                    : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-400"
+                                }`}
+                              >
+                                <Flame className={`h-2.5 w-2.5 ${item.popular ? "text-amber-400 fill-amber-400/20" : ""}`} />
+                                Popular
+                              </button>
                             </td>
 
                             {/* Availability Toggle Switch */}

@@ -5,7 +5,7 @@ import { demoRestaurant, demoMenuCategories } from "@/data/restaurant";
 import { Restaurant, MenuCategory, MenuItem } from "@/types";
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
-import ModeToggle from "@/components/ModeToggle";
+import DeliveryToggle from "@/components/DeliveryToggle";
 import ClosedBanner from "@/components/ClosedBanner";
 import CategorySidebar from "@/components/CategorySidebar";
 import CategoryTabs from "@/components/CategoryTabs";
@@ -17,6 +17,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Search, X } from "lucide-react";
 import AddressModal from "@/components/AddressModal";
 import DemoSelector from "@/components/DemoSelector";
+import DietaryFilter from "@/components/DietaryFilter";
+import { checkOpeningStatus } from "@/lib/openingHours";
 
 // Transform raw Supabase menu_items rows into our typed MenuCategory[] structure
 function buildMenuCategories(
@@ -166,6 +168,7 @@ export default function MenuPage() {
           { data: extras },
           { data: groups },
           { data: choices },
+          { data: overrides },
         ] = await Promise.all([
           supabase
             .from("categories")
@@ -179,12 +182,26 @@ export default function MenuPage() {
           supabase.from("item_extras").select("*"),
           supabase.from("option_groups").select("*"),
           supabase.from("option_choices").select("*"),
+          supabase.from("menu_item_overrides").select("*").eq("restaurant_slug", "marios-pizza"),
         ]);
 
         if (cats && cats.length > 0 && items) {
+          const mergedItems = items.map(item => {
+            const o = overrides?.find(x => x.item_id === item.id);
+            if (o) {
+              return {
+                ...item,
+                available: o.available !== null ? o.available : item.available,
+                popular: o.is_popular !== null ? o.is_popular : item.popular,
+                price: o.price_override !== null ? Number(o.price_override) : item.price,
+              };
+            }
+            return item;
+          });
+
           const built = buildMenuCategories(
             cats,
-            items,
+            mergedItems,
             extras || [],
             groups || [],
             choices || []
@@ -201,37 +218,32 @@ export default function MenuPage() {
 
     fetchMenu();
 
-    // ── Realtime subscription on menu_items ──────────────────────────────
+    // ── Realtime subscription on menu_items & overrides ─────────────────
     const channel = supabase
       .channel("menu_items_live")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "menu_items" },
-        (payload) => {
-          const updated = payload.new as any;
-          if (!updated?.id) return;
+        () => {
+          fetchMenu();
+        }
+      )
+      .subscribe();
 
-          setMenuCategories((prev) =>
-            prev.map((cat) => ({
-              ...cat,
-              items: cat.items.map((item) => {
-                if (item.id !== updated.id) return item;
-                return {
-                  ...item,
-                  available: updated.available,
-                  price: Number(updated.price),
-                  name: updated.name,
-                  description: updated.description || item.description,
-                };
-              }),
-            }))
-          );
+    const overridesChannel = supabase
+      .channel("menu_item_overrides_live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "menu_item_overrides" },
+        () => {
+          fetchMenu();
         }
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(overridesChannel);
     };
   }, []);
 
@@ -319,6 +331,60 @@ export default function MenuPage() {
   }, [menuCategories, selectedDietary, searchQuery]);
 
   const { totalItems, subtotal, setIsCartOpen, orderMode, setOrderMode } = useCart();
+  
+  // Realtime settings closed state
+  const [temporarilyClosed, setTemporarilyClosed] = useState(false);
+  const isClosed = useMemo(() => {
+    const status = checkOpeningStatus(restaurant, temporarilyClosed);
+    return !status.isOpen;
+  }, [restaurant, temporarilyClosed]);
+
+  useEffect(() => {
+    const supabase = createClient();
+    async function fetchSettings() {
+      const { data } = await supabase
+        .from("restaurant_settings")
+        .select("temporarily_closed")
+        .eq("restaurant_slug", "marios-pizza")
+        .single();
+      if (data) {
+        setTemporarilyClosed(data.temporarily_closed);
+      }
+    }
+    fetchSettings();
+
+    const channel = supabase
+      .channel("restaurant_settings_live_menu")
+      .on("postgres_changes", { event: "*", schema: "public", table: "restaurant_settings" }, (payload) => {
+        const updated = payload.new as any;
+        if (updated) {
+          setTemporarilyClosed(updated.temporarily_closed);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Custom Event Listeners
+  useEffect(() => {
+    const handleOpenItem = (e: any) => {
+      setModalItem(e.detail);
+    };
+    const handleOpenAddress = () => {
+      setShowAddressModal(true);
+    };
+
+    window.addEventListener("open-item-modal", handleOpenItem);
+    window.addEventListener("open-address-modal", handleOpenAddress);
+
+    return () => {
+      window.removeEventListener("open-item-modal", handleOpenItem);
+      window.removeEventListener("open-address-modal", handleOpenAddress);
+    };
+  }, []);
 
   // Address verification enforcement for delivery mode
   useEffect(() => {
@@ -373,69 +439,17 @@ export default function MenuPage() {
   const total = Math.max(0, subtotal + deliveryFee);
 
   return (
-    <div className="min-h-screen bg-brand-bg text-brand-text pb-20 lg:pb-0 relative">
+    <div className="min-h-screen bg-[#FAFAFA] text-[#1A1A1A] pb-20 lg:pb-0 relative">
       <Nav restaurant={restaurant} menuCategories={menuCategories} onDemoClick={() => setIsDemoSelectorOpen(true)} />
 
-      {!restaurant.isOpen && <ClosedBanner />}
+      <ClosedBanner />
 
       <Hero restaurant={restaurant} />
 
-      <ModeToggle />
+      <DeliveryToggle />
 
       {/* Premium Bento Dietary Filters */}
-      <div className="mx-auto max-w-7xl px-4 py-3 lg:px-6 flex flex-wrap gap-2 items-center">
-        <span className="text-[9px] font-extrabold uppercase tracking-widest text-brand-text-muted mr-1.5">Dietary Filters:</span>
-        <button
-          onClick={() => setSelectedDietary(null)}
-          className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wide transition-all duration-150 cursor-pointer border ${
-            selectedDietary === null
-              ? "bg-brand-primary border-brand-primary text-brand-bg shadow-sm"
-              : "bg-brand-card border-brand-border text-brand-text-muted hover:border-brand-text/30"
-          }`}
-        >
-          All Menu
-        </button>
-        <button
-          onClick={() => setSelectedDietary(selectedDietary === "vegan" ? null : "vegan")}
-          className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wide transition-all duration-150 cursor-pointer border flex items-center gap-1.5 ${
-            selectedDietary === "vegan"
-              ? "bg-brand-primary border-brand-primary text-brand-bg shadow-sm"
-              : "bg-brand-card border-brand-border text-brand-text-muted hover:border-brand-text/30"
-          }`}
-        >
-          <span>🌱</span> Vegan
-        </button>
-        <button
-          onClick={() => setSelectedDietary(selectedDietary === "vegetarian" ? null : "vegetarian")}
-          className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wide transition-all duration-150 cursor-pointer border flex items-center gap-1.5 ${
-            selectedDietary === "vegetarian"
-              ? "bg-brand-primary border-brand-primary text-brand-bg shadow-sm"
-              : "bg-brand-card border-brand-border text-brand-text-muted hover:border-brand-text/30"
-          }`}
-        >
-          <span>🥬</span> Vegetarian
-        </button>
-        <button
-          onClick={() => setSelectedDietary(selectedDietary === "gf" ? null : "gf")}
-          className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wide transition-all duration-150 cursor-pointer border flex items-center gap-1.5 ${
-            selectedDietary === "gf"
-              ? "bg-brand-primary border-brand-primary text-brand-bg shadow-sm"
-              : "bg-brand-card border-brand-border text-brand-text-muted hover:border-brand-text/30"
-          }`}
-        >
-          <span>🌾</span> Gluten-Free
-        </button>
-        <button
-          onClick={() => setSelectedDietary(selectedDietary === "halal" ? null : "halal")}
-          className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wide transition-all duration-150 cursor-pointer border flex items-center gap-1.5 ${
-            selectedDietary === "halal"
-              ? "bg-brand-primary border-brand-primary text-brand-bg shadow-sm"
-              : "bg-brand-card border-brand-border text-brand-text-muted hover:border-brand-text/30"
-          }`}
-        >
-          <span>🥩</span> Halal
-        </button>
-      </div>
+      <DietaryFilter selectedDietary={selectedDietary} setSelectedDietary={setSelectedDietary} />
 
       {/* Desktop Inline Menu Search Component */}
       <div className="mx-auto max-w-7xl px-4 py-2 lg:px-6 hidden sm:block">
@@ -490,42 +504,13 @@ export default function MenuPage() {
                 <MenuSection
                   key={category.id}
                   category={category}
-                  isOpen={restaurant.isOpen}
+                  isOpen={!isClosed}
                   onOpenModal={handleOpenModal}
                   isActive={activeCategory === category.id}
                 />
               ))
             )}
           </div>
-
-          {/* Feature 11: Sticky Desktop Cart Sidebar Total Module */}
-          {totalItems > 0 && (
-            <div className="w-[280px] shrink-0 sticky top-24 bg-brand-card border border-brand-border rounded-2xl p-5 shadow-lg hidden lg:flex flex-col space-y-4 animate-fade-in">
-              <div className="flex items-center justify-between border-b border-brand-border pb-3.5">
-                <div>
-                  <h3 className="text-xs font-extrabold uppercase tracking-wide text-brand-text">Sticky Cart</h3>
-                  <p className="text-[10px] text-brand-text-muted mt-0.5 font-bold">Checkout ready</p>
-                </div>
-                <span className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs text-brand-text-muted">
-                  <span>Selected items:</span>
-                  <span className="font-bold text-brand-text">{totalItems}</span>
-                </div>
-                <div className="flex justify-between text-xs text-brand-text-muted">
-                  <span>Basket subtotal:</span>
-                  <span className="font-serif font-bold text-brand-text">£{subtotal.toFixed(2)}</span>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsCartOpen(true)}
-                className="w-full rounded-xl bg-brand-primary py-2.5 text-center text-xs font-bold text-brand-bg hover:opacity-90 active:scale-95 transition-all uppercase tracking-wide shadow-md cursor-pointer"
-              >
-                Open Basket
-              </button>
-            </div>
-          )}
         </div>
       </div>
 

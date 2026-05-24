@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { tenantConfig } from "@/config/tenant";
 import { Toaster } from "sonner";
+import { ToastProvider } from "@/components/ToastSystem";
 
-const plusJakarta = Plus_Jakarta_Sans({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-plus-jakarta",
+  variable: "--font-inter",
   weight: ["400", "500", "600", "700", "800"],
 });
 
@@ -23,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={plusJakarta.variable} suppressHydrationWarning>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://xukvcpmmlfltwwnnqifj.supabase.co" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://xukvcpmmlfltwwnnqifj.supabase.co" />
@@ -55,8 +56,10 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-sans antialiased bg-brand-bg text-brand-text transition-colors duration-150" suppressHydrationWarning>
-        <CartProvider>{children}</CartProvider>
+      <body className="font-sans antialiased bg-[#FAFAFA] text-[#1A1A1A] transition-colors duration-150" suppressHydrationWarning>
+        <ToastProvider>
+          <CartProvider>{children}</CartProvider>
+        </ToastProvider>
         <Toaster position="top-center" richColors />
       </body>
     </html>

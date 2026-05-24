@@ -4,8 +4,7 @@ import { useState, useCallback, memo, useEffect } from "react";
 import { MenuItem } from "@/types";
 import { useCart } from "@/context/CartContext";
 import { Plus, Minus, Heart } from "lucide-react";
-import Image from "next/image";
-import { toast } from "sonner";
+import { useToastSystem } from "./ToastSystem";
 import { createClient } from "@/lib/supabase/client";
 
 interface ItemCardProps {
@@ -20,9 +19,11 @@ const ItemCard = memo(function ItemCard({
   onOpenModal,
 }: ItemCardProps) {
   const { items, addItem, updateQuantity } = useCart();
+  const { showToast } = useToastSystem();
+  
   const [showAllergens, setShowAllergens] = useState(false);
-  const [imgLoaded, setImgLoaded] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     try {
@@ -41,17 +42,15 @@ const ItemCard = memo(function ItemCard({
       if (isWishlisted) {
         updated = updated.filter((id: string) => id !== item.id);
         setIsWishlisted(false);
-        toast.success(`Removed ${item.name} from wishlist.`);
+        showToast(`Removed ${item.name} from wishlist.`, "info");
       } else {
         updated.push(item.id);
         setIsWishlisted(true);
-        toast.success(`Added ${item.name} to wishlist!`, {
-          description: "Access your favorites anytime from your account settings.",
-        });
+        showToast(`Added ${item.name} to wishlist!`, "success");
       }
       localStorage.setItem("kitchio-wishlist", JSON.stringify(updated));
 
-      // Self-healing database sync if logged in
+      // Sync wishlists inside Supabase if user is logged in
       const supabase = createClient();
       supabase.auth.getUser().then(({ data: { user } }) => {
         if (user) {
@@ -73,14 +72,14 @@ const ItemCard = memo(function ItemCard({
     } catch {
       // Ignore
     }
-  }, [item.id, item.name, isWishlisted]);
+  }, [item.id, item.name, isWishlisted, showToast]);
 
   const cartLines = items.filter((ci) => ci.itemId === item.id);
   const totalInCart = cartLines.reduce((sum, ci) => sum + ci.quantity, 0);
 
   const hasCustomization =
     (item.optionGroups && item.optionGroups.length > 0) ||
-    item.extras.length > 0;
+    (item.extras && item.extras.length > 0);
 
   const handleAddClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -89,8 +88,9 @@ const ItemCard = memo(function ItemCard({
       onOpenModal(item);
     } else {
       addItem(item.id, item.name, item.price, 1, [], []);
+      showToast(`${item.name} added to cart`, "success");
     }
-  }, [item, isOpen, hasCustomization, onOpenModal, addItem]);
+  }, [item, isOpen, hasCustomization, onOpenModal, addItem, showToast]);
 
   const handleSimpleIncrement = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -98,55 +98,73 @@ const ItemCard = memo(function ItemCard({
       onOpenModal(item);
     } else {
       addItem(item.id, item.name, item.price, 1, [], []);
+      showToast(`${item.name} added to cart`, "success");
     }
-  }, [item, hasCustomization, onOpenModal, addItem]);
+  }, [item, hasCustomization, onOpenModal, addItem, showToast]);
 
   const handleSimpleDecrement = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    if (cartLines.length === 1) {
-      const line = cartLines[0];
-      updateQuantity(line.cartLineId, line.quantity - 1);
+    if (cartLines.length > 0) {
+      // Find the last added cart item for simple decrements
+      const lastLine = cartLines[cartLines.length - 1];
+      updateQuantity(lastLine.cartLineId, lastLine.quantity - 1);
+      showToast(`Removed 1 ${item.name} from cart`, "info");
     }
-  }, [cartLines, updateQuantity]);
+  }, [cartLines, updateQuantity, item.name, showToast]);
+
+  // Determine category food emoji based on item details or category name
+  const getFoodEmoji = () => {
+    const name = item.name.toLowerCase();
+    const desc = item.description.toLowerCase();
+    
+    if (name.includes("pizza") || desc.includes("tomato") || name.includes("margherita") || name.includes("diavola")) return "🍕";
+    if (name.includes("bread") || name.includes("bruschetta")) return "🍞";
+    if (name.includes("salad") || name.includes("caprese")) return "🥗";
+    if (name.includes("chips") || name.includes("fries") || name.includes("onion")) return "🍟";
+    if (name.includes("cake") || name.includes("tiramisu") || name.includes("cheesecake")) return "🍰";
+    if (name.includes("beer") || name.includes("ale") || name.includes("coke") || name.includes("lemonade") || name.includes("water") || name.includes("pellegrino")) return "🥤";
+    if (name.includes("calamari") || name.includes("squid")) return "🦑";
+    return "🍗";
+  };
 
   return (
     <div
       id={`item-${item.id}`}
       onClick={() => item.available && isOpen && onOpenModal(item)}
-      className={`group relative flex rounded-2xl bg-brand-card border border-brand-border p-3 sm:p-4 gap-3 sm:gap-4 transition-all duration-300 hover:border-brand-text/25 hover:shadow-md cursor-pointer ${
-        !item.available ? "opacity-40 cursor-not-allowed" : ""
+      className={`group relative flex rounded-[12px] bg-white border border-[#E8E8E8] p-4 gap-4 transition-all duration-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] hover:-translate-y-[2px] cursor-pointer text-[#1A1A1A] ${
+        !item.available ? "opacity-60 cursor-not-allowed select-none" : ""
       }`}
     >
       {/* Content Left */}
-      <div className="flex flex-1 flex-col justify-between pr-1">
+      <div className="flex flex-1 flex-col justify-between pr-1 min-w-0">
         <div>
           {item.isPopular && (
-            <span className="mb-2.5 inline-flex items-center rounded bg-brand-primary px-2 py-0.5 text-[8px] font-extrabold text-brand-bg uppercase tracking-wide">
-              Popular
+            <span className="mb-2 inline-flex items-center rounded-full bg-[#FF5C1A] px-2.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider select-none">
+              POPULAR
             </span>
           )}
 
-          <h3 className="text-sm font-bold text-brand-text leading-snug tracking-tight transition-colors">
+          <h3 className="text-base font-bold leading-snug tracking-tight text-[#1A1A1A]">
             {item.name}
           </h3>
 
-          <p className="mt-1 text-xs text-brand-text-muted font-medium line-clamp-2 leading-relaxed">
+          <p className="mt-1 text-sm text-[#717171] leading-relaxed line-clamp-2 select-none">
             {item.description}
           </p>
 
           {item.allergens.length > 0 && (
-            <div className="mt-2.5">
+            <div className="mt-2 flex flex-col items-start">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowAllergens(!showAllergens);
                 }}
-                className="text-[9px] font-bold uppercase tracking-wider text-brand-text-muted hover:text-brand-text transition-colors"
+                className="text-[11px] font-bold tracking-wider text-[#717171] hover:text-[#1A1A1A] transition-colors cursor-pointer"
               >
-                Allergens {showAllergens ? "−" : "+"}
+                ALLERGENS +
               </button>
               {showAllergens && (
-                <p className="mt-1.5 text-[9px] font-semibold text-brand-text bg-brand-bg border border-brand-border py-0.5 px-2 rounded inline-block">
+                <p className="mt-1 text-[10px] font-semibold text-[#717171] bg-[#FAFAFA] border border-[#E8E8E8] py-0.5 px-2 rounded inline-block animate-fade-in">
                   {item.allergens.join(", ")}
                 </p>
               )}
@@ -154,80 +172,95 @@ const ItemCard = memo(function ItemCard({
           )}
 
           {item.calories > 0 && (
-            <p className="mt-1.5 text-[10px] font-semibold text-brand-text-muted/80">
+            <p className="mt-1.5 text-xs text-[#717171]/70 font-semibold select-none">
               {item.calories} kcal
             </p>
           )}
         </div>
 
-        {/* Price + Add Button */}
-        <div className="mt-3 flex items-end justify-between">
-          <span className="text-sm font-bold text-brand-text font-serif">
+        {/* Price Row (Add button handles itself below) */}
+        <div className="mt-3">
+          <span className="text-lg font-bold text-[#1A1A1A] tracking-tight">
             £{item.price.toFixed(2)}
           </span>
-
-          {item.available && isOpen && (
-            <div onClick={(e) => e.stopPropagation()}>
-              {totalInCart === 0 ? (
-                <button
-                  onClick={handleAddClick}
-                  className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-primary text-brand-bg transition-all duration-100 hover:opacity-90 active:scale-90 cursor-pointer"
-                  aria-label={`Add ${item.name} to cart`}
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              ) : (
-                <div className="flex items-center gap-1 bg-brand-card border border-brand-border rounded-full p-0.5 shadow-sm">
-                  <button
-                    onClick={handleSimpleDecrement}
-                    className="flex h-6 w-6 items-center justify-center rounded-full text-brand-text-muted hover:text-brand-text hover:bg-brand-bg transition-all active:scale-90 cursor-pointer"
-                  >
-                    <Minus className="h-3 w-3" />
-                  </button>
-                  <span className="w-5 text-center text-xs font-bold text-brand-text">
-                    {totalInCart}
-                  </span>
-                  <button
-                    onClick={handleSimpleIncrement}
-                    className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-primary text-brand-bg hover:opacity-90 transition-colors active:scale-90 cursor-pointer"
-                  >
-                    <Plus className="h-3 w-3" />
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Image Right */}
-      <div className="relative h-24 w-24 sm:h-28 sm:w-28 shrink-0 overflow-hidden rounded-xl bg-brand-bg self-center">
+      {/* Image Right & Unavailable Overlay */}
+      <div className="relative h-[120px] w-[120px] shrink-0 overflow-hidden rounded-lg bg-[#FAFAFA] self-center">
         {/* Heart Wishlist Trigger */}
-        <button
-          type="button"
-          onClick={toggleWishlist}
-          className="absolute top-1.5 right-1.5 z-10 p-1.5 rounded-full bg-white/90 hover:bg-white text-zinc-450 hover:text-red-500 hover:scale-105 active:scale-95 transition-all duration-150 shadow-sm cursor-pointer border border-zinc-100"
-          aria-label="Add to wishlist"
-        >
-          <Heart className={`h-3 w-3 transition-colors ${isWishlisted ? "fill-red-500 text-red-500" : "text-zinc-400"}`} />
-        </button>
+        {item.available && (
+          <button
+            type="button"
+            onClick={toggleWishlist}
+            className="absolute top-1.5 right-1.5 z-10 p-1.5 rounded-full bg-white/90 hover:bg-white text-zinc-400 hover:text-red-500 hover:scale-105 active:scale-95 transition-all duration-150 shadow-sm cursor-pointer border border-[#E8E8E8]"
+            aria-label="Add to wishlist"
+          >
+            <Heart className={`h-3 w-3 transition-colors ${isWishlisted ? "fill-red-500 text-red-500" : "text-zinc-400"}`} />
+          </button>
+        )}
 
-        {!imgLoaded && <div className="absolute inset-0 bg-brand-bg animate-pulse" />}
-        <Image
-          src={item.image}
-          alt={item.name}
-          fill
-          sizes="(max-width: 640px) 96px, 112px"
-          className={`object-cover transition-all duration-500 group-hover:scale-105 ${
-            imgLoaded ? "opacity-100" : "opacity-0"
-          }`}
-          onLoad={() => setImgLoaded(true)}
-        />
+        {imageError ? (
+          /* Warm Gradient Fallback with Category Emoji */
+          <div
+            className="absolute inset-0 flex items-center justify-center select-none"
+            style={{
+              background: "linear-gradient(135deg, #FF5C1A 0%, #FF8C42 100%)",
+            }}
+          >
+            <span className="text-4xl">{getFoodEmoji()}</span>
+          </div>
+        ) : (
+          <img
+            src={item.image}
+            alt={item.name}
+            className="h-full w-full object-cover transition-all duration-500 group-hover:scale-105"
+            onError={() => setImageError(true)}
+          />
+        )}
+
+        {/* Unavailable overlay */}
         {!item.available && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-[1px]">
-            <span className="rounded-md bg-brand-card border border-brand-border px-2.5 py-1 text-[9px] font-bold text-brand-text-muted uppercase tracking-wider shadow-md">
-              Sold out
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 select-none">
+            <span className="text-white text-xs font-bold uppercase tracking-wider bg-black/45 px-2.5 py-1 rounded">
+              Unavailable
             </span>
+          </div>
+        )}
+
+        {/* Floating Add to Cart Button bottom right of image */}
+        {item.available && isOpen && (
+          <div 
+            className="absolute bottom-1.5 right-1.5 z-10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {totalInCart === 0 ? (
+              <button
+                onClick={handleAddClick}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FF5C1A] text-white hover:bg-[#FF5C1A]/90 transition-all active:scale-90 cursor-pointer shadow-md"
+                aria-label={`Add ${item.name} to cart`}
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            ) : (
+              <div className="flex items-center gap-1.5 bg-white border border-[#E8E8E8] rounded-full p-0.5 shadow-md animate-fade-in">
+                <button
+                  onClick={handleSimpleDecrement}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-[#717171] hover:text-[#1A1A1A] hover:bg-[#FAFAFA] transition-all active:scale-90 cursor-pointer"
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                </button>
+                <span className="w-5 text-center text-xs font-extrabold text-[#1A1A1A]">
+                  {totalInCart}
+                </span>
+                <button
+                  onClick={handleSimpleIncrement}
+                  className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FF5C1A] text-white hover:bg-[#FF5C1A]/90 transition-all active:scale-90 cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

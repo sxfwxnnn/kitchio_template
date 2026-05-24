@@ -22,6 +22,11 @@ const demoRestaurant: Restaurant = {
   isOpen: true,
   closesAt: "22:00",
   stripeAccountId: null,
+  maxDeliveryRadiusMiles: 3.0,
+  restaurantLat: 51.5219,
+  restaurantLng: -0.0718,
+  publicHolidays: ["2026-12-25", "2026-01-01"],
+  lastOrderBeforeCloseMins: 15,
 };
 
 const demoMenuCategories: MenuCategory[] = [
@@ -43,6 +48,8 @@ const demoMenuCategories: MenuCategory[] = [
           { id: "e1", name: "Add Mozzarella", price: 1.5 },
           { id: "e2", name: "Add Jalapeños", price: 0.5 },
         ],
+        dietary: ["vegetarian"],
+        upsellPriority: 1,
       },
       {
         id: "item-2",
@@ -55,6 +62,8 @@ const demoMenuCategories: MenuCategory[] = [
         allergens: ["gluten"],
         calories: 280,
         extras: [],
+        dietary: ["vegan", "vegetarian"],
+        upsellPriority: 2,
       },
       {
         id: "item-3",
@@ -67,6 +76,8 @@ const demoMenuCategories: MenuCategory[] = [
         allergens: ["gluten", "shellfish"],
         calories: 420,
         extras: [],
+        dietary: [],
+        upsellPriority: 3,
       },
       {
         id: "item-3b",
@@ -79,6 +90,8 @@ const demoMenuCategories: MenuCategory[] = [
         allergens: ["gluten", "dairy", "eggs"],
         calories: 460,
         extras: [],
+        dietary: ["vegetarian"],
+        upsellPriority: 4,
       },
       {
         id: "item-3c",
@@ -91,6 +104,8 @@ const demoMenuCategories: MenuCategory[] = [
         allergens: ["dairy", "gluten"],
         calories: 510,
         extras: [],
+        dietary: ["vegetarian", "gluten-free"],
+        upsellPriority: 5,
       },
     ],
   },
@@ -124,6 +139,8 @@ const demoMenuCategories: MenuCategory[] = [
             ],
           },
         ],
+        dietary: ["vegetarian"],
+        upsellPriority: 6,
       },
       {
         id: "item-5",
@@ -151,6 +168,8 @@ const demoMenuCategories: MenuCategory[] = [
             ],
           },
         ],
+        dietary: ["halal"],
+        upsellPriority: 7,
       },
       {
         id: "item-5b",
@@ -177,6 +196,8 @@ const demoMenuCategories: MenuCategory[] = [
             ],
           },
         ],
+        dietary: ["vegetarian"],
+        upsellPriority: 8,
       },
       {
         id: "item-5c",
@@ -203,6 +224,8 @@ const demoMenuCategories: MenuCategory[] = [
             ],
           },
         ],
+        dietary: ["halal"],
+        upsellPriority: 9,
       },
       {
         id: "item-5d",
@@ -227,6 +250,8 @@ const demoMenuCategories: MenuCategory[] = [
             ],
           },
         ],
+        dietary: [],
+        upsellPriority: 10,
       },
     ],
   },
@@ -245,6 +270,8 @@ const demoMenuCategories: MenuCategory[] = [
         allergens: ["gluten"],
         calories: 380,
         extras: [],
+        dietary: ["vegan", "vegetarian", "gluten-free"],
+        upsellPriority: 1,
       },
       {
         id: "item-6b",
@@ -257,6 +284,8 @@ const demoMenuCategories: MenuCategory[] = [
         allergens: ["dairy", "gluten"],
         calories: 440,
         extras: [],
+        dietary: ["vegetarian", "gluten-free"],
+        upsellPriority: 2,
       },
       {
         id: "item-7",
@@ -269,6 +298,8 @@ const demoMenuCategories: MenuCategory[] = [
         allergens: ["gluten", "dairy"],
         calories: 420,
         extras: [],
+        dietary: ["vegetarian"],
+        upsellPriority: 3,
       },
       {
         id: "item-7b",
@@ -281,6 +312,8 @@ const demoMenuCategories: MenuCategory[] = [
         allergens: ["dairy"],
         calories: 220,
         extras: [],
+        dietary: ["vegetarian", "gluten-free"],
+        upsellPriority: 4,
       },
     ],
   },
@@ -299,6 +332,8 @@ const demoMenuCategories: MenuCategory[] = [
         allergens: ["dairy", "eggs", "gluten"],
         calories: 520,
         extras: [],
+        dietary: ["vegetarian"],
+        upsellPriority: 1,
       },
       {
         id: "item-8b",
@@ -311,6 +346,8 @@ const demoMenuCategories: MenuCategory[] = [
         allergens: ["dairy", "eggs", "gluten"],
         calories: 610,
         extras: [],
+        dietary: ["vegetarian"],
+        upsellPriority: 2,
       },
       {
         id: "item-8c",
@@ -323,6 +360,8 @@ const demoMenuCategories: MenuCategory[] = [
         allergens: ["dairy", "gluten"],
         calories: 480,
         extras: [],
+        dietary: ["vegetarian"],
+        upsellPriority: 3,
       },
     ],
   },
@@ -341,6 +380,8 @@ const demoMenuCategories: MenuCategory[] = [
         allergens: [],
         calories: 0,
         extras: [],
+        dietary: ["vegan", "vegetarian", "gluten-free", "halal"],
+        upsellPriority: 1,
       },
       {
         id: "item-9b",
@@ -353,6 +394,8 @@ const demoMenuCategories: MenuCategory[] = [
         allergens: [],
         calories: 90,
         extras: [],
+        dietary: ["vegan", "vegetarian", "gluten-free", "halal"],
+        upsellPriority: 2,
       },
       {
         id: "item-10",
@@ -365,6 +408,8 @@ const demoMenuCategories: MenuCategory[] = [
         allergens: [],
         calories: 139,
         extras: [],
+        dietary: ["vegan", "vegetarian", "gluten-free", "halal"],
+        upsellPriority: 3,
       },
       {
         id: "item-10b",
@@ -377,6 +422,8 @@ const demoMenuCategories: MenuCategory[] = [
         allergens: [],
         calories: 0,
         extras: [],
+        dietary: ["vegan", "vegetarian", "gluten-free", "halal"],
+        upsellPriority: 4,
       },
       {
         id: "item-10c",
@@ -389,6 +436,8 @@ const demoMenuCategories: MenuCategory[] = [
         allergens: ["gluten"],
         calories: 180,
         extras: [],
+        dietary: ["vegan", "vegetarian", "halal"],
+        upsellPriority: 5,
       },
     ],
   },
